@@ -1,4 +1,4 @@
-﻿from doc_builder.core import (
+from doc_builder.core import (
     add_h1, add_h2, add_h3, add_p, add_bullet,
     add_callout, add_code_block, add_table
 )
@@ -50,28 +50,66 @@ def build_sec10_to_18(doc):
     add_bullet(doc, "Database Name:", "callmate_ai")
     add_bullet(doc, "Hosting Platform:", "MongoDB Atlas (Multi-cloud shard cluster)")
     add_bullet(doc, "Connection Library:", "Mongoose ODM with serverSelectionTimeoutMS = 4000ms and bufferCommands = false")
-    add_bullet(doc, "Active Collections:", "users (stores registered user accounts and authentication credentials)")
-    add_bullet(doc, "Indexes:", "email_1 (unique index for fast lookup and duplicate prevention), userId_1 (unique indexed UUID)")
+    add_bullet(doc, "Active Collections:", "users (stores registered profiles, GPS location, courier addresses, instructions, and settings), spamnumbers (global community threat database)")
+    add_bullet(doc, "Indexes:", "users.email_1 (unique), users.userId_1 (unique), spamnumbers.phoneNumber_1 (unique indexed phone)")
 
     # 12. MONGODB DOCUMENT STRUCTURE
     add_h1(doc, "12. MONGODB DOCUMENT STRUCTURE & SCHEMA")
-    add_p(doc, "Below is the verified JSON document structure for the users collection:")
+    add_p(doc, "Below is the verified JSON document structure for the users and spamnumbers collections in MongoDB Atlas:")
     add_code_block(
         doc,
-"""{
+"""// Collection: users
+{
   "_id": "66ce381a89f41b120c89a4e2",
   "userId": "usr_aee79ffe-8888-4601-8f79-c9e9c535e810",
   "name": "Sanjana",
   "email": "sanjana@callmate.ai",
-  "password": "$2a$10$7vN3XGg5d9u1b.k8wP2qEe6h1Y8j3kL4m5n6o7p8q9r0s1t2u3v4w",
-  "passwordHash": "$2a$10$7vN3XGg5d9u1b.k8wP2qEe6h1Y8j3kL4m5n6o7p8q9r0s1t2u3v4w",
   "phoneNumber": "+919440886543",
+  "gender": "Female",
+  "location": {
+    "latitude": 16.2888,
+    "longitude": 80.4256,
+    "address": "Hanuman Nagar, Guntur, Andhra Pradesh, 522001, India",
+    "accuracy": 241,
+    "updatedAt": "2026-08-31T16:00:36.000Z"
+  },
+  "addresses": [
+    {
+      "id": "addr_live_auto",
+      "label": "📍 Live Current Location",
+      "fullAddress": "Hanuman Nagar, Guntur, Andhra Pradesh, 522001, India",
+      "coordinates": { "lat": 16.2888, "lng": 80.4256 }
+    },
+    {
+      "id": "addr_892348",
+      "label": "🏢 Work Hub",
+      "fullAddress": "Tower 4, Mindspace Tech Park, HITEC City, Hyderabad",
+      "additionalDetails": "Drop at 5th floor reception"
+    }
+  ],
+  "instructions": [
+    {
+      "id": "inst_1",
+      "title": "Delivery Couriers",
+      "prompt": "Ask for delivery package tracking number and tell driver to leave parcel at front door.",
+      "enabled": true
+    }
+  ],
   "accountStatus": "ACTIVE",
-  "appVersion": "1.0.0",
-  "lastLogin": "2026-08-31T15:04:33.957Z",
   "createdAt": "2026-08-27T16:32:17.346Z",
-  "updatedAt": "2026-08-31T15:04:33.957Z",
-  "__v": 0
+  "updatedAt": "2026-08-31T16:00:36.000Z"
+}
+
+// Collection: spamnumbers (Crowdsourced Threat Database)
+{
+  "_id": "66ce89b21f98e2340b12a991",
+  "phoneNumber": "+1 (555) 382-9012",
+  "reportCount": 14,
+  "spamScore": 92,
+  "category": "FINANCIAL_SCAM",
+  "callerName": "Bajaj Quick Loan Agent",
+  "reporters": ["usr_aee79ffe-8888-4601-8f79-c9e9c535e810"],
+  "lastReportedAt": "2026-08-31T15:49:18.950Z"
 }"""
     )
 
@@ -89,23 +127,18 @@ show collections;
 // 3. Find user by email
 db.users.findOne({ email: "sanjana@callmate.ai" }, { password: 0, passwordHash: 0 });
 
-// 4. Count active registered users
-db.users.countDocuments({ accountStatus: "ACTIVE" });
+// 4. Query live location & addresses
+db.users.find({ email: "sanjana@callmate.ai" }, { location: 1, addresses: 1 });
 
-// 5. Update user phone number
-db.users.updateOne(
-  { userId: "usr_aee79ffe-8888-4601-8f79-c9e9c535e810" },
-  { $set: { phoneNumber: "+919440886543", updatedAt: new Date() } }
-);
+// 5. Query crowdsourced spam numbers with report count >= 5
+db.spamnumbers.find({ reportCount: { $gte: 5 } }).sort({ reportCount: -1 });
 
-// 6. Soft-delete user account
-db.users.updateOne(
-  { email: "user@example.com" },
-  { $set: { accountStatus: "DELETED", updatedAt: new Date() } }
-);
-
-// 7. [CAUTION: DESTRUCTIVE] Permanently remove user by userId
-db.users.deleteOne({ userId: "usr_aee79ffe-8888-4601-8f79-c9e9c535e810" });"""
+// 6. Report/Increment spam score for a telephone number
+db.spamnumbers.updateOne(
+  { phoneNumber: "+15553829012" },
+  { $inc: { reportCount: 1, spamScore: 5 }, $set: { lastReportedAt: new Date() } },
+  { upsert: true }
+);"""
     )
 
     # 14. BACKEND API DOCUMENTATION
@@ -121,13 +154,21 @@ db.users.deleteOne({ userId: "usr_aee79ffe-8888-4601-8f79-c9e9c535e810" });"""
             ["POST", "/api/auth/logout", "No", "Logs out user session and confirms invalidation"],
             ["GET", "/api/auth/me", "Bearer", "Returns current authenticated user session data"],
             ["GET", "/api/users/me", "Bearer", "Fetches full user profile details from database"],
-            ["PUT", "/api/users/me", "Bearer", "Updates Name or Phone. Body: {name, phoneNumber}"],
-            ["DELETE", "/api/users/me", "Bearer", "Permanently deletes user account from MongoDB Atlas"],
-            ["GET", "/api/health", "No", "System health check returning database status and uptime"],
-            ["POST", "/api/v1/ai/chat", "No", "Generates screening reply. Body: {call_id, conversation}"],
-            ["POST", "/api/v1/ai/classify", "No", "Classifies call category and intent. Body: {call_id, conversation}"],
-            ["POST", "/api/v1/ai/summarize", "No", "Generates post-call structured summary. Body: {call_id, conversation, caller_name}"],
-            ["GET", "/api/v1/health", "No", "FastAPI health check with AI provider status and latency"]
+            ["PUT", "/api/users/me", "Bearer", "Updates Name, Phone, Gender. Body: {name, phoneNumber, gender}"],
+            ["PUT", "/api/users/location", "Bearer", "Updates GPS & auto-reverse geocoded street address. Body: {latitude, longitude, address, accuracy}"],
+            ["GET", "/api/users/addresses", "Bearer", "Fetches all saved courier drop-off addresses from MongoDB Atlas"],
+            ["POST", "/api/users/addresses", "Bearer", "Saves new delivery address to MongoDB. Body: {label, fullAddress, additionalDetails}"],
+            ["DELETE", "/api/users/addresses/:id", "Bearer", "Removes saved address from MongoDB Atlas"],
+            ["POST", "/api/users/instructions", "Bearer", "Saves custom AI screening rule. Body: {title, prompt, tag}"],
+            ["DELETE", "/api/users/instructions/:id", "Bearer", "Removes screening rule from cloud"],
+            ["POST", "/api/spam/report", "Bearer", "Reports number to global community spam database. Body: {phoneNumber, category, reason}"],
+            ["GET", "/api/spam/check/:phoneNumber", "No", "Checks if number is flagged as community spam. Returns {isSpam, reportCount, spamScore}"],
+            ["GET", "/api/spam/my-spam", "Bearer", "Fetches all spam numbers flagged by current authenticated user"],
+            ["GET", "/api/health", "No", "System health check returning database connection status and shard host"],
+            ["POST", "/api/v1/ai/chat", "No", "Google Gemini 3.6 Flash live screening engine reply. Body: {call_id, conversation}"],
+            ["POST", "/api/v1/ai/classify", "No", "Multi-category intent classifier. Body: {call_id, conversation}"],
+            ["POST", "/api/v1/ai/summarize", "No", "Post-call structured summary generation. Body: {call_id, conversation, caller_name}"],
+            ["GET", "/api/v1/health", "No", "FastAPI health check reporting Gemini AI engine status"]
         ]
     )
 
@@ -138,51 +179,49 @@ db.users.deleteOne({ userId: "usr_aee79ffe-8888-4601-8f79-c9e9c535e810" });"""
         "The Android client coordinates network operations through Retrofit interfaces, OkHttp client interceptors, "
         "and Kotlin Coroutines Flow within the AuthRepositoryImpl and CallRepositoryImpl repositories."
     )
-    add_bullet(doc, "Base URLs:", "Cloud Auth: http://10.0.2.2:5000/api/ | AI Screening Engine: http://10.0.2.2:8000/api/v1/")
+    add_bullet(doc, "Base URLs:", "Cloud Auth & MongoDB: http://10.0.2.2:5000/api/ | AI Screening Engine: http://10.0.2.2:8000/api/v1/")
     add_bullet(doc, "AuthInterceptor:", "Dynamically extracts the stored JWT token from TokenManager and injects Authorization: Bearer <token> into request headers.")
     add_bullet(doc, "Error Handling:", "HttpExceptions are caught in repository functions and mapped to user-friendly Resource.Error(message) objects.")
 
     # 16. THE YOU SECTION
     add_h1(doc, "16. THE 'YOU' SECTION (PROFILE & SETTINGS)")
-    add_p(doc, "The 'You' section is CallMate AI's settings and user management dashboard. All 9 subsections are fully implemented:")
+    add_p(doc, "The 'You' section is CallMate AI's settings and user management dashboard. All subsections are fully implemented:")
     add_bullet(doc, "1. Profile Header:", "Displays avatar, full name, phone number, and pencil icon to open PersonalDetailsScreen.")
     add_bullet(doc, "2. Tell CallMate (Master Toggle):", "Master switch enabling or pausing all automated AI call screening.")
-    add_bullet(doc, "3. Your Instructions:", "Full editable prompt screen where users configure screening rules for courier drivers, job recruiters, and promotional loans.")
-    add_bullet(doc, "4. Assistant Health Check:", "Interactive connectivity screen that tests latency against http://10.0.2.2:8000 and reports backend health.")
+    add_bullet(doc, "3. Your Instructions:", "Interactive manager where users add (+ Add New Screening Instruction), edit, and delete custom rules with cloud sync to MongoDB.")
+    add_bullet(doc, "4. Assistant Health Check:", "Interactive connectivity screen testing latency against http://10.0.2.2:8000 and reporting backend health.")
     add_bullet(doc, "5. Silent Mode:", "Granular switchboard allowing users to auto-silence telemarketers, known spam numbers, and unverified callers.")
-    add_bullet(doc, "6. Voice & Language:", "Voice customization screen with pitch (0.5x - 2.0x) and speed sliders, language picker, and TTS sample player.")
-    add_bullet(doc, "7. Your Addresses:", "Complete CRUD address manager supporting Home, Office, College, and Other labels with delivery driver notes.")
-    add_bullet(doc, "8. WhatsApp Updates:", "Notification preference toggles for instant recap alerts, urgent call alerts, and feature announcements.")
-    add_bullet(doc, "9. Account Data & Sign Out:", "Shows cloud account status (ACTIVE), MongoDB storage indicator, prominent Sign Out button, and Delete Account trigger.")
+    add_bullet(doc, "6. Voice & Language:", "Voice customization screen with pitch and speed sliders, language picker, and TTS sample preview.")
+    add_bullet(doc, "7. Your Addresses & Live GPS:", "Displays real-time reverse-geocoded street address (OpenStreetMap Nominatim) and supports custom courier drop-off locations.")
+    add_bullet(doc, "8. Invite a Friend:", "Instantly copies official GitHub repository link (https://github.com/sanjana71006/CallAgent) and opens Android share sheet.")
+    add_bullet(doc, "9. Account Data & Sign Out:", "Shows cloud account status (ACTIVE), MongoDB storage indicator, Sign Out confirmation, and Delete Account trigger.")
 
     # 17. SPAM CALL DETECTION
     add_h1(doc, "17. SPAM CALL DETECTION ARCHITECTURE")
     add_p(
         doc,
-        "CallMate AI currently implements spam detection using a hybrid rule-based and simulated classification pipeline. "
-        "When a call arrives, the system normalizes the telephone number, checks user-defined Silent Mode filtering rules, and triggers AI classification."
+        "CallMate AI implements a multi-tier defense architecture combining local contact whitelisting, "
+        "crowdsourced community threat databases (MongoDB Atlas), and Gemini LLM intent classification."
     )
     add_code_block(
         doc,
 """Incoming Call Event (Phone Number + Caller Name)
         |
         v
-[Phone Normalization] -> Strips non-digits, normalizes country codes
+[Phone Contacts Lookup (ContactsContract)]
+  - Is caller saved in Address Book? -> Direct Ring (Bypass Screening)
+        |
+        v [Unknown Number]
+[Global Spam Threat Check (GET /api/spam/check/:phoneNumber)]
+  - Is caller reported in MongoDB? -> Threat Badge (🚨 Likely Spam)
         |
         v
-[Silent Mode Heuristic Check (Room)]
-  - Is caller flagged as Telemarketer? -> Silence
-  - Is caller flagged as Potential Scam? -> Silence
-  - Is caller flagged as Unknown Spam? -> Auto-Screen with AI
+[AI Intent Classifier (/api/v1/ai/classify - Gemini 3.6 Flash)]
+  - Evaluates conversation for loan scams, telemarketing, robocalls
         |
         v
-[AI Intent Classifier (/api/v1/ai/classify)]
-  - Evaluates initial greeting & caller response
-  - Returns Category (SPAM, DELIVERY, RECRUITER, BANK, UNKNOWN)
-  - Computes Confidence Score (0.00 - 1.00)
-        |
-        v
-[Action Decision: Allow / Mute / Screen / Decline]"""
+[Post-Call User Spam Reporting (POST /api/spam/report)]
+"""
     )
     add_callout(
         doc,

@@ -1,4 +1,4 @@
-﻿from doc_builder.core import (
+from doc_builder.core import (
     add_h1, add_h2, add_h3, add_p, add_bullet,
     add_callout, add_code_block, add_table
 )
@@ -38,26 +38,28 @@ def build_sec28_to_36(doc):
         [
             ["Local Room Storage", "IMPLEMENTED", "11 SQLite entities fully functional with reactive Flow queries"],
             ["User Auth & Session", "IMPLEMENTED", "Bcrypt hashing, JWT generation, and MongoDB Atlas persistence active"],
-            ["'You' Settings Hub", "IMPLEMENTED", "All 9 settings screens and dialogs completely implemented"],
-            ["Simulated Screening", "IMPLEMENTED", "SimulatorCallProvider mock engine enables realistic screening testing"],
-            ["Cellular CallScreening", "PLANNED", "Real cellular carrier interception via Telecom framework is not yet implemented"],
-            ["Verified Spam DB", "NOT IMPLEMENTED", "No production Indian spam dataset integrated; test synthetic data only"],
-            ["Multilingual STT/TTS", "PARTIAL", "Configured for en-US; regional Indian languages (Hindi, Telugu, Tamil) planned"]
+            ["Contacts Whitelisting", "IMPLEMENTED", "Queries device ContactsContract to let known contacts ring directly"],
+            ["Live GPS & Addresses", "IMPLEMENTED", "Silent GPS capture + OpenStreetMap reverse-geocoding street address"],
+            ["Global Spam Registry", "IMPLEMENTED", "Crowdsourced SpamNumber model in MongoDB Atlas with UI Spam filter"],
+            ["Gemini AI Screening", "IMPLEMENTED", "Google Gemini 3.6 Flash (gemini-3.6-flash) cloud inference active"],
+            ["'You' Settings Hub", "IMPLEMENTED", "All settings screens, address manager, and instructions manager active"],
+            ["Cellular CallScreening", "PLANNED", "Real cellular carrier interception via Telecom framework is planned"]
         ]
     )
 
     # 32. FUTURE DEVELOPMENT
     add_h1(doc, "32. FUTURE DEVELOPMENT & STRATEGIC ROADMAP")
     add_bullet(doc, "Phase 1: Android Telecom Integration:", "Implement Android CallScreeningService to intercept incoming carrier cellular calls.")
-    add_bullet(doc, "Phase 2: Verified Spam Threat Feed:", "Integrate verified national DND/spam number registries with real-time reputation lookups.")
-    add_bullet(doc, "Phase 3: Multilingual Voice Models:", "Add speech recognition and synthesis support for major regional languages.")
+    add_bullet(doc, "Phase 2: National Registry Synergies:", "Integrate verified national DND/TRAI registries with real-time reputation lookups.")
+    add_bullet(doc, "Phase 3: Multilingual Voice Models:", "Add speech recognition and synthesis support for major regional Indian languages (Hindi, Telugu, Tamil).")
     add_bullet(doc, "Phase 4: Cloud Sync Engine:", "Implement optional end-to-end encrypted backup of call summaries to user cloud storage.")
 
     # 33. PLAY STORE READINESS
     add_h1(doc, "33. GOOGLE PLAY STORE READINESS ASSESSMENT")
     add_p(doc, "To release CallMate AI on the Google Play Store, the following production checklist must be completed:")
     add_bullet(doc, "Package Name & Versioning:", "com.callmate.ai with versionCode 1, versionName '1.0.0' configured in build.gradle.kts.")
-    add_bullet(doc, "Privacy Policy Hosting:", "A published Privacy Policy URL detailing microphone and account data handling must be linked.")
+    add_bullet(doc, "Permission Declarations:", "READ_CONTACTS (Whitelisting known callers), ACCESS_FINE_LOCATION (Delivery guidance), RECORD_AUDIO (Voice screening).")
+    add_bullet(doc, "Privacy Policy Hosting:", "A published Privacy Policy URL detailing microphone, contact list, and account data handling must be linked.")
     add_bullet(doc, "Cleartext Traffic Enforcement:", "Disable android:usesCleartextTraffic='true' and enforce HTTPS with production domain certificate.")
     add_bullet(doc, "Account Deletion Compliance:", "Satisfied: DELETE /api/users/me allows users to permanently erase their cloud account.")
     add_bullet(doc, "ProGuard & R8 Obfuscation:", "Enable isMinifyEnabled = true in build.gradle.kts for release builds.")
@@ -82,13 +84,16 @@ def build_sec28_to_36(doc):
     add_h1(doc, "35. PROJECT QUICK REFERENCE CARD")
     add_p(doc, "A high-level summary of the CallMate AI technical stack:")
     add_bullet(doc, "Project Name:", "CallMate AI")
+    add_bullet(doc, "Official GitHub Repository:", "https://github.com/sanjana71006/CallAgent")
+    add_bullet(doc, "150-Char Synopsis:", "CallMate AI is a privacy-first call assistant that screens unknown calls, transcribes voice live, blocks spam, and guides couriers with Google Gemini.")
+    add_bullet(doc, "Standalone APK File:", "CallMate_AI_v1.0.0_debug.apk (18.8 MB)")
     add_bullet(doc, "Android Package:", "com.callmate.ai")
     add_bullet(doc, "Android Framework:", "Jetpack Compose + Kotlin Coroutines + Room SQLite (Version 3)")
-    add_bullet(doc, "Backend Server:", "Node.js (Express) on Port 5000 (Cloud Auth & User Management)")
-    add_bullet(doc, "AI Screening Server:", "Python (FastAPI) on Port 8000 (Ollama qwen2.5:0.5b / Mock)")
+    add_bullet(doc, "Cloud Backend:", "Node.js (Express) on Port 5000 (Auth, Location, Addresses, Global Spam)")
+    add_bullet(doc, "AI Screening Server:", "Python (FastAPI) on Port 8000 (Google Gemini 3.6 Flash / Ollama / Mock)")
     add_bullet(doc, "Cloud Database:", "MongoDB Atlas (callmate_ai cluster)")
     add_bullet(doc, "Local Database:", "Room SQLite (callmate_ai.db, 11 entities)")
-    add_bullet(doc, "Current Status:", "Fully functional local client + cloud auth + AI engine; Carrier Telecom integration planned")
+    add_bullet(doc, "Current Status:", "Fully functional native Android client with Contacts & GPS + Cloud Backend + Gemini AI")
 
     # 36. GLOSSARY
     add_h1(doc, "36. TECHNICAL GLOSSARY & DEFINITIONS")

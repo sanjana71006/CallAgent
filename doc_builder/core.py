@@ -1,4 +1,4 @@
-﻿import docx
+import docx
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -99,12 +99,16 @@ def add_title_page(doc):
     
     p_box.add_run("Project Name: ").bold = True
     p_box.add_run("CallMate AI — Privacy-First Intelligent Call Assistant\n")
+    p_box.add_run("GitHub Repository: ").bold = True
+    p_box.add_run("https://github.com/sanjana71006/CallAgent\n")
+    p_box.add_run("150-Char Synopsis: ").bold = True
+    p_box.add_run("CallMate AI is a privacy-first call assistant that screens unknown calls, transcribes voice live, blocks spam, and guides couriers with Google Gemini.\n")
     p_box.add_run("Version: ").bold = True
-    p_box.add_run("v1.0.0 (Build 2026081841)\n")
+    p_box.add_run("v1.0.0 (Release Build 2026081841 - CallMate_AI_v1.0.0_debug.apk)\n")
     p_box.add_run("Documentation Date: ").bold = True
     p_box.add_run("August 31, 2026\n")
     p_box.add_run("Architecture Scope: ").bold = True
-    p_box.add_run("Android Client (Kotlin/Compose/Room) + Cloud Backend (Node.js/Express/MongoDB Atlas) + AI Engine (FastAPI/Ollama)\n")
+    p_box.add_run("Android Client (Kotlin/Compose/Room) + Cloud Backend (Node.js/Express/MongoDB Atlas) + AI Engine (FastAPI/Google Gemini 3.6 Flash)\n")
     p_box.add_run("Source of Truth: ").bold = True
     p_box.add_run("Verified Live Codebase Implementation (No Invented Features)")
 
@@ -121,7 +125,7 @@ def add_title_page(doc):
     p_abs = doc.add_paragraph(
         "This document provides a factual, exhaustive, and rigorously verified technical record of the CallMate AI system. "
         "CallMate AI is an intelligent call management and screening platform engineered with an offline-first Android client (Kotlin, Jetpack Compose, Room + SQLite), "
-        "a cloud authentication and account management backend (Node.js, Express, MongoDB Atlas), and an AI call screening inference server (Python FastAPI with local Ollama LLM integration). "
+        "a cloud authentication, crowdsourced spam, and address database (Node.js, Express, MongoDB Atlas), and an AI call screening inference server (Python FastAPI with Google Gemini 3.6 Flash integration). "
         "Every section in this document describes the precise state of the codebase, strictly differentiating implemented features from partially implemented modules and planned future work."
     )
     p_abs.paragraph_format.line_spacing = 1.15
