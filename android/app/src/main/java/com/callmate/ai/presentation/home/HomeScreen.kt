@@ -48,25 +48,43 @@ fun HomeScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
-                                .size(24.dp)
-                                .background(MaterialTheme.colorScheme.primary, shape = CircleShape),
+                                .size(28.dp)
+                                .background(
+                                    brush = Brush.linearGradient(
+                                        colors = listOf(PrimaryBlueLight, PrimaryBlueDark)
+                                    ),
+                                    shape = RoundedCornerShape(8.dp)
+                                ),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.SmartToy,
+                                imageVector = Icons.Default.Shield,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(14.dp)
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "callmate ai",
+                            text = "CallMate",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.ExtraBold,
                             letterSpacing = (-0.5).sp,
                             color = MaterialTheme.colorScheme.onBackground
                         )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.primary
+                        ) {
+                            Text(
+                                text = "AI",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            )
+                        }
                     }
                 },
                 actions = {
@@ -309,14 +327,19 @@ fun HomeScreen(
                             Box(
                                 modifier = Modifier
                                     .size(76.dp)
-                                    .background(AccentGreenLight, shape = CircleShape),
+                                    .background(
+                                        brush = Brush.linearGradient(
+                                            colors = listOf(PrimaryBlueLight, PrimaryBlueDark)
+                                        ),
+                                        shape = CircleShape
+                                    ),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Face,
+                                    imageVector = Icons.Default.Headset,
                                     contentDescription = null,
                                     tint = Color.White,
-                                    modifier = Modifier.size(44.dp)
+                                    modifier = Modifier.size(40.dp)
                                 )
                             }
                         }

@@ -98,46 +98,13 @@
             position: relative;
         }
 
-        /* Status Bar */
-        .status-bar {
-            height: 40px;
-            padding: 0 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            z-index: 10;
-        }
-
-        .notch {
-            width: 110px;
-            height: 20px;
-            background: var(--notch-color);
-            border-radius: 0 0 14px 14px;
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .camera-lens {
-            width: 8px;
-            height: 8px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 50%;
-        }
-
         .screen-container {
             flex: 1;
             overflow-y: auto;
             position: relative;
             display: flex;
             flex-direction: column;
+            padding-top: 8px;
             padding-bottom: 70px; /* Space for bottom dock */
         }
 
@@ -667,16 +634,6 @@
 <body>
 
 <div class="phone-wrapper" data-theme="light">
-    <div class="notch"><div class="camera-lens"></div></div>
-    <div class="status-bar">
-        <span>10:06</span>
-        <div style="display: flex; align-items: center; gap: 6px;">
-            <i class="fa-solid fa-wifi" style="font-size: 11px;"></i>
-            <i class="fa-solid fa-signal" style="font-size: 11px;"></i>
-            <i class="fa-solid fa-battery-full" style="font-size: 11px;"></i>
-        </div>
-    </div>
-
     <!-- Screen Container -->
     <div class="screen-container">
         
@@ -880,7 +837,6 @@
             <!-- Section Header: CHATS with Spam Filter Tabs -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <span style="font-size: 11px; font-weight: 800; color: var(--text-secondary); letter-spacing: 0.8px;">ACTIVITY & CALLS</span>
-                <span style="font-size: 11px; color: var(--primary); font-weight: 700; cursor: pointer;" onclick="openQuickSimulation()">+ Simulate Incoming</span>
             </div>
 
             <!-- Filter Tabs: [ All ] | [ Screened ] | [ 🚨 Spam ] -->

@@ -53,6 +53,10 @@ val AccentPurpleSubtleDark = Color(0x268B5CF6)
 val AccentTealDark = Color(0xFF06B6D4)
 val AccentTealSubtleDark = Color(0x2606B6D4)
 
+// Primary Blue Aliases
+val PrimaryBlueLight = PrimaryAccentLight
+val PrimaryBlueDark = SecondaryAccentLight
+
 // Legacy aliases for backward compatibility
 val NavyPrimary = SlatePrimaryLight
 val NavySecondary = PrimaryAccentLight
