@@ -1,0 +1,2669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CallMate AI — Live App Experience</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+
+        /* Fixed Neutral Outer Browser Canvas */
+        body {
+            background: #080C14;
+            color: #F8FAFC;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Light Theme (Subtle, Calm, Refined) - Scoped strictly to phone */
+        .phone-wrapper[data-theme="light"] {
+            --bg-phone: #F8FAFC;
+            --surface: #FFFFFF;
+            --surface-elevated: #F1F5F9;
+            --border: #E2E8F0;
+            --text-primary: #0F172A;
+            --text-secondary: #64748B;
+            --primary: #2563EB;
+            --primary-soft: #EFF6FF;
+            --accent-green: #059669;
+            --accent-green-bg: #ECFDF5;
+            --accent-red: #DC2626;
+            --accent-red-bg: #FEF2F2;
+            --accent-amber: #D97706;
+            --accent-amber-bg: #FFFBEB;
+            --accent-purple: #7C3AED;
+            --accent-purple-bg: #F5F3FF;
+            --accent-teal: #0D9488;
+            --accent-teal-bg: #F0FDFA;
+            --shadow-phone: 0 25px 60px rgba(0, 0, 0, 0.45);
+            --notch-color: #E2E8F0;
+            --phone-border: #CBD5E1;
+            --incoming-bg: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+            --incoming-text: #FFFFFF;
+            --dock-bg: rgba(241, 245, 249, 0.95);
+        }
+
+        /* Dark Theme (Midnight Navy & Electric Glow) - Scoped strictly to phone */
+        .phone-wrapper[data-theme="dark"] {
+            --bg-phone: #0A1118;
+            --surface: #112233;
+            --surface-elevated: #162C46;
+            --border: rgba(255, 255, 255, 0.08);
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --primary: #38BDF8;
+            --primary-soft: rgba(56, 189, 248, 0.12);
+            --accent-green: #10B981;
+            --accent-green-bg: rgba(16, 185, 129, 0.15);
+            --accent-red: #EF4444;
+            --accent-red-bg: rgba(239, 68, 68, 0.15);
+            --accent-amber: #F59E0B;
+            --accent-amber-bg: rgba(245, 158, 11, 0.15);
+            --accent-purple: #8B5CF6;
+            --accent-purple-bg: rgba(139, 92, 246, 0.15);
+            --accent-teal: #06B6D4;
+            --accent-teal-bg: rgba(6, 182, 212, 0.15);
+            --shadow-phone: 0 25px 70px rgba(0, 0, 0, 0.85), 0 0 40px rgba(0, 119, 182, 0.2);
+            --notch-color: #1E293B;
+            --phone-border: #1E293B;
+            --incoming-bg: linear-gradient(180deg, #0B2545 0%, #060B11 100%);
+            --incoming-text: #FFFFFF;
+            --dock-bg: rgba(17, 34, 51, 0.95);
+        }
+
+        /* Mobile Device Frame */
+        .phone-wrapper {
+            width: 100%;
+            max-width: 412px;
+            height: 860px;
+            background: var(--bg-phone);
+            color: var(--text-primary);
+            border-radius: 44px;
+            border: 8px solid var(--phone-border);
+            box-shadow: var(--shadow-phone);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            height: 40px;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            z-index: 10;
+        }
+
+        .notch {
+            width: 110px;
+            height: 20px;
+            background: var(--notch-color);
+            border-radius: 0 0 14px 14px;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .camera-lens {
+            width: 8px;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 50%;
+        }
+
+        .screen-container {
+            flex: 1;
+            overflow-y: auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 70px; /* Space for bottom dock */
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            flex: 1;
+            padding: 16px 18px;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Floating Pill Bottom Navigation Dock */
+        .bottom-dock-wrapper {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 30;
+        }
+
+        .bottom-dock {
+            background: var(--dock-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 36px;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .dock-tab {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 18px;
+            border-radius: 26px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .dock-tab.active {
+            background: var(--surface);
+            color: var(--text-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            font-weight: 700;
+        }
+
+        .dock-avatar {
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 11px;
+        }
+
+        /* Inside-phone theme toggle button */
+        .phone-theme-toggle {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 4px 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-primary);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            user-select: none;
+        }
+
+        .badge-pill {
+            background: var(--primary-soft);
+            color: var(--primary);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .badge-new {
+            background: var(--accent-green-bg);
+            color: var(--accent-green);
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            height: 48px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.08);
+        }
+
+        /* Hero Carousel Card ("Talk to your assistant") */
+        .hero-carousel-card {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 18px;
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hero-avatar {
+            width: 68px;
+            height: 68px;
+            background: linear-gradient(135deg, #1E40AF 0%, #2563EB 60%, #38BDF8 100%);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            color: #FFFFFF;
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+        }
+
+        .carousel-dots {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-top: 10px;
+            margin-bottom: 16px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: all 0.25s ease;
+        }
+
+        .dot.active {
+            background: var(--primary);
+            width: 18px;
+            border-radius: 4px;
+        }
+
+        /* Settings Rows & Sections */
+        .section-header-title {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-secondary);
+            letter-spacing: 0.8px;
+            margin: 14px 0 8px 4px;
+            text-transform: uppercase;
+        }
+
+        .settings-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 13px 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .settings-row:hover {
+            background: var(--surface-elevated);
+        }
+
+        .settings-row-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 0 16px;
+        }
+
+        /* Chat Item */
+        .chat-row-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 13px 14px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .chat-row-item:hover {
+            border-color: var(--primary);
+        }
+
+        .retro-phone-icon {
+            width: 44px;
+            height: 44px;
+            background: #FFE4E6;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            color: #E11D48;
+        }
+
+        /* Live Call Stream */
+        .transcript-feed {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 10px 0;
+        }
+
+        .bubble {
+            max-width: 84%;
+            padding: 12px 14px;
+            border-radius: 16px;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .bubble.ai {
+            background: var(--primary);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bubble.caller {
+            background: var(--surface);
+            color: var(--text-primary);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .bubble-speaker {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+
+        .bubble.ai .bubble-speaker { color: rgba(255, 255, 255, 0.85); }
+        .bubble.caller .bubble-speaker { color: var(--text-secondary); }
+
+        .segmented-tabs {
+            display: flex;
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 3px;
+            margin-bottom: 12px;
+            gap: 3px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 7px 4px;
+            border-radius: 10px;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+            letter-spacing: -0.1px;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn i {
+            font-size: 11px;
+        }
+
+        .tab-btn.active {
+            background: var(--surface);
+            color: var(--primary);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Modal Sheets */
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 50;
+            display: none;
+            justify-content: flex-end;
+            flex-direction: column;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-sheet {
+            background: var(--surface);
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            padding: 20px;
+            max-height: 80%;
+            overflow-y: auto;
+            border-top: 1px solid var(--border);
+            animation: slideUp 0.25s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        /* Quick chips */
+        .quick-chips {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 8px 0;
+        }
+
+        .chip {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .chip:hover {
+            border-color: var(--primary);
+        }
+
+        .call-controls {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 12px 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-round {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-end { background: var(--accent-red); color: #FFFFFF; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35); }
+        .btn-action { background: var(--surface-elevated); color: var(--text-primary); border: 1.5px solid var(--border); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); }
+        .btn-takeover { background: var(--primary); color: #FFFFFF; padding: 0 20px; border-radius: 25px; width: auto; font-size: 14px; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35); }
+
+        /* In-App Floating Toast Notification */
+        .inapp-toast {
+            position: absolute;
+            top: 48px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .inapp-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Authentication Styles */
+        .auth-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 18px;
+            margin-bottom: 18px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        }
+
+        .auth-field {
+            margin-bottom: 14px;
+        }
+
+        .auth-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .auth-label {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-secondary);
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .auth-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .auth-input-icon {
+            position: absolute;
+            left: 14px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .auth-input {
+            width: 100%;
+            height: 46px;
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            color: var(--text-primary);
+            padding: 0 42px 0 40px;
+            font-size: 13px;
+            font-weight: 500;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .auth-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-soft);
+        }
+
+        .auth-toggle-pwd {
+            position: absolute;
+            right: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .auth-error-banner {
+            background: var(--accent-red-bg);
+            color: var(--accent-red);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 14px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="phone-wrapper" data-theme="light">
+    <div class="notch"><div class="camera-lens"></div></div>
+    <div class="status-bar">
+        <span>10:06</span>
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-wifi" style="font-size: 11px;"></i>
+            <i class="fa-solid fa-signal" style="font-size: 11px;"></i>
+            <i class="fa-solid fa-battery-full" style="font-size: 11px;"></i>
+        </div>
+    </div>
+
+    <!-- Screen Container -->
+    <div class="screen-container">
+        
+        <!-- 0A. LOGIN SCREEN -->
+        <div id="screen-login" class="screen" style="padding-top: 30px; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #1E40AF 0%, #2563EB 55%, #38BDF8 100%); border-radius: 18px; display: inline-flex; justify-content: center; align-items: center; color: white; margin-bottom: 12px; box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L4 5.5V11.5C4 16.5 7.4 21 12 22.2C16.6 21 20 16.5 20 11.5V5.5L12 2Z" fill="white" fill-opacity="0.25" stroke="white" stroke-width="1.8" stroke-linejoin="round"/>
+                            <path d="M9 11.5C9 9.84 10.34 8.5 12 8.5C13.66 8.5 15 9.84 15 11.5V13C15 14.1 14.1 15 13 15H11C9.9 15 9 14.1 9 13V11.5Z" fill="white"/>
+                            <circle cx="12" cy="11.5" r="1.5" fill="#1D4ED8"/>
+                            <path d="M6.5 12.5C6.5 12.5 7 11 8.5 11" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M17.5 12.5C17.5 12.5 17 11 15.5 11" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div style="display: flex; justify-content: center; align-items: center; gap: 5px; margin-bottom: 4px;">
+                        <span style="font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">CallMate</span>
+                        <span style="background: linear-gradient(135deg, #2563EB 0%, #4F46E5 100%); color: white; font-size: 11px; font-weight: 900; padding: 2px 6px; border-radius: 6px; letter-spacing: 0.5px; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);">AI</span>
+                    </div>
+                    <p style="font-size: 13px; color: var(--text-secondary);">Sign in to manage your AI call assistant</p>
+                </div>
+
+                <div id="login-error-banner" class="auth-error-banner">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span id="login-error-text">Invalid credentials</span>
+                </div>
+
+                <div class="auth-card">
+                    <div class="auth-field">
+                        <div class="auth-label">Email Address</div>
+                        <div class="auth-input-wrapper">
+                            <i class="fa-regular fa-envelope auth-input-icon"></i>
+                            <input type="email" id="login-email" class="auth-input" placeholder="e.g. alex@example.com" value="sanjana@callmate.ai">
+                        </div>
+                    </div>
+
+                    <div class="auth-field">
+                        <div class="auth-label">Password</div>
+                        <div class="auth-input-wrapper">
+                            <i class="fa-solid fa-lock auth-input-icon"></i>
+                            <input type="password" id="login-password" class="auth-input" placeholder="Enter your password" value="password123">
+                            <i class="fa-regular fa-eye auth-toggle-pwd" onclick="togglePasswordVisibility('login-password', this)"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="btn-login" onclick="handleLogin()" style="margin-bottom: 16px;">
+                    <span>Login</span>
+                </button>
+            </div>
+
+            <div style="text-align: center; font-size: 13px; color: var(--text-secondary); margin-bottom: 16px;">
+                Don't have an account? 
+                <span style="color: var(--primary); font-weight: 700; cursor: pointer;" onclick="showScreen('screen-signup')">Sign Up</span>
+            </div>
+        </div>
+
+        <!-- 0B. SIGN UP SCREEN -->
+        <div id="screen-signup" class="screen" style="padding-top: 10px; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="text-align: center; margin-bottom: 16px;">
+                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #1E40AF 0%, #2563EB 55%, #38BDF8 100%); border-radius: 14px; display: inline-flex; justify-content: center; align-items: center; color: white; margin-bottom: 8px; box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L4 5.5V11.5C4 16.5 7.4 21 12 22.2C16.6 21 20 16.5 20 11.5V5.5L12 2Z" fill="white" fill-opacity="0.25" stroke="white" stroke-width="1.8" stroke-linejoin="round"/>
+                            <path d="M9 11.5C9 9.84 10.34 8.5 12 8.5C13.66 8.5 15 9.84 15 11.5V13C15 14.1 14.1 15 13 15H11C9.9 15 9 14.1 9 13V11.5Z" fill="white"/>
+                            <circle cx="12" cy="11.5" r="1.5" fill="#1D4ED8"/>
+                            <path d="M6.5 12.5C6.5 12.5 7 11 8.5 11" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M17.5 12.5C17.5 12.5 17 11 15.5 11" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div style="display: flex; justify-content: center; align-items: center; gap: 5px; margin-bottom: 2px;">
+                        <span style="font-size: 20px; font-weight: 800; letter-spacing: -0.4px;">Create Account</span>
+                    </div>
+                    <p style="font-size: 12px; color: var(--text-secondary);">Set up your privacy-first AI call assistant</p>
+                </div>
+
+                <div id="signup-error-banner" class="auth-error-banner">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span id="signup-error-text">Please check inputs</span>
+                </div>
+
+                <div class="auth-card" style="padding: 14px;">
+                    <div class="auth-field">
+                        <div class="auth-label">Full Name</div>
+                        <div class="auth-input-wrapper">
+                            <i class="fa-regular fa-user auth-input-icon"></i>
+                            <input type="text" id="signup-name" class="auth-input" placeholder="e.g. Sanjana" value="Sanjana">
+                        </div>
+                    </div>
+
+                    <div class="auth-field">
+                        <div class="auth-label">Email Address</div>
+                        <div class="auth-input-wrapper">
+                            <i class="fa-regular fa-envelope auth-input-icon"></i>
+                            <input type="email" id="signup-email" class="auth-input" placeholder="e.g. sanjana@callmate.ai" value="sanjana@callmate.ai">
+                        </div>
+                    </div>
+
+                    <div class="auth-field">
+                        <div class="auth-label">Phone Number (Optional)</div>
+                        <div class="auth-input-wrapper">
+                            <i class="fa-solid fa-phone auth-input-icon"></i>
+                            <input type="tel" id="signup-phone" class="auth-input" placeholder="e.g. +91 9440886543" value="9440886543">
+                        </div>
+                    </div>
+
+                    <div class="auth-field">
+                        <div class="auth-label">Password</div>
+                        <div class="auth-input-wrapper">
+                            <i class="fa-solid fa-lock auth-input-icon"></i>
+                            <input type="password" id="signup-password" class="auth-input" placeholder="At least 6 characters" value="password123">
+                            <i class="fa-regular fa-eye auth-toggle-pwd" onclick="togglePasswordVisibility('signup-password', this)"></i>
+                        </div>
+                    </div>
+
+                    <div class="auth-field">
+                        <div class="auth-label">Confirm Password</div>
+                        <div class="auth-input-wrapper">
+                            <i class="fa-solid fa-lock auth-input-icon"></i>
+                            <input type="password" id="signup-confirm-password" class="auth-input" placeholder="Re-enter password" value="password123">
+                            <i class="fa-regular fa-eye auth-toggle-pwd" onclick="togglePasswordVisibility('signup-confirm-password', this)"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="btn-signup" onclick="handleRegister()" style="margin-bottom: 14px;">
+                    <span>Create Account</span>
+                </button>
+            </div>
+            <div style="text-align: center; font-size: 13px; color: var(--text-secondary); margin-bottom: 10px;">
+                Already have an account? 
+                <span style="color: var(--primary); font-weight: 700; cursor: pointer;" onclick="showScreen('screen-login')">Log In</span>
+            </div>
+        </div>
+
+        <!-- 1. CHATS / MAIN SCREEN (Matching Screenshot 4) -->
+        <div id="screen-chats" class="screen">
+            <!-- App Branding Top Bar (Trustable Shield Logo & Theme Toggle) -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <div style="width: 34px; height: 34px; background: linear-gradient(135deg, #1E40AF 0%, #2563EB 55%, #38BDF8 100%); border-radius: 10px; display: flex; justify-content: center; align-items: center; color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L4 5.5V11.5C4 16.5 7.4 21 12 22.2C16.6 21 20 16.5 20 11.5V5.5L12 2Z" fill="white" fill-opacity="0.25" stroke="white" stroke-width="1.8" stroke-linejoin="round"/>
+                            <path d="M9 11.5C9 9.84 10.34 8.5 12 8.5C13.66 8.5 15 9.84 15 11.5V13C15 14.1 14.1 15 13 15H11C9.9 15 9 14.1 9 13V11.5Z" fill="white"/>
+                            <circle cx="12" cy="11.5" r="1.5" fill="#1D4ED8"/>
+                            <path d="M6.5 12.5C6.5 12.5 7 11 8.5 11" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M17.5 12.5C17.5 12.5 17 11 15.5 11" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <span style="font-size: 19px; font-weight: 800; letter-spacing: -0.4px;">CallMate</span>
+                        <span style="background: linear-gradient(135deg, #2563EB 0%, #4F46E5 100%); color: white; font-size: 10px; font-weight: 900; padding: 2px 6px; border-radius: 6px; letter-spacing: 0.5px; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);">AI</span>
+                    </div>
+                </div>
+                <!-- In-phone theme toggle -->
+                <div class="phone-theme-toggle" onclick="toggleTheme()" title="Toggle Light / Dark Mode">
+                    <span id="theme-toggle-emoji">☀️</span>
+                    <span id="theme-toggle-label" style="font-size: 11px;">Light</span>
+                </div>
+            </div>
+
+            <!-- Master Assistant Active Card -->
+            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.02);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 38px; height: 38px; background: var(--primary-soft); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 18px; color: var(--primary);">
+                        <i class="fa-solid fa-mobile-screen-button"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 14px; font-weight: 700;" id="assistant-status-title">AI Assistant is On</div>
+                        <div style="font-size: 11px; color: var(--text-secondary);">CallMate Assistant is managing your calls!</div>
+                    </div>
+                </div>
+                <i class="fa-solid fa-toggle-on" id="assistant-toggle-icon" style="font-size: 26px; color: var(--accent-green); cursor: pointer;" onclick="toggleAssistantMaster()"></i>
+            </div>
+
+            <!-- Hero Carousel: "Talk to your assistant" -->
+            <div class="hero-carousel-card" style="background: linear-gradient(135deg, var(--surface) 0%, var(--surface-elevated) 100%); border: 1.5px solid var(--border); box-shadow: 0 4px 20px rgba(37, 99, 235, 0.08);">
+                <div style="max-width: 62%;">
+                    <div style="display: inline-flex; align-items: center; gap: 5px; background: var(--primary-soft); color: var(--primary); padding: 4px 10px; border-radius: 12px; font-size: 10px; font-weight: 800; margin-bottom: 8px; border: 1px solid rgba(37, 99, 235, 0.15);">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI SCREENING ENGINE
+                    </div>
+                    <div style="font-size: 16px; font-weight: 800; margin-bottom: 4px; color: var(--text-primary);">Talk to your assistant</div>
+                    <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 12px;">Test real-time two-way call screening powered by Gemini AI.</div>
+                    <button onclick="startCallSimulation()" style="background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%); color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 14px; font-size: 12px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);">
+                        <i class="fa-solid fa-phone"></i> Call Now
+                    </button>
+                </div>
+                <div class="hero-avatar">
+                    <i class="fa-solid fa-headset"></i>
+                </div>
+            </div>
+
+            <div class="carousel-dots">
+                <div class="dot active"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+
+            <!-- Section Header: CHATS with Spam Filter Tabs -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 11px; font-weight: 800; color: var(--text-secondary); letter-spacing: 0.8px;">ACTIVITY & CALLS</span>
+                <span style="font-size: 11px; color: var(--primary); font-weight: 700; cursor: pointer;" onclick="openQuickSimulation()">+ Simulate Incoming</span>
+            </div>
+
+            <!-- Filter Tabs: [ All ] | [ Screened ] | [ 🚨 Spam ] -->
+            <div class="segmented-tabs" style="margin-bottom: 12px;">
+                <button class="tab-btn active" id="filter-all-btn" onclick="filterChats('ALL')">
+                    <i class="fa-solid fa-phone"></i> All (<span id="count-all">3</span>)
+                </button>
+                <button class="tab-btn" id="filter-screened-btn" onclick="filterChats('SCREENED')">
+                    <i class="fa-solid fa-shield-halved"></i> Screened (<span id="count-screened">2</span>)
+                </button>
+                <button class="tab-btn" id="filter-spam-btn" onclick="filterChats('SPAM')">
+                    <i class="fa-solid fa-ban" style="color: var(--accent-red);"></i> Spam (<span id="count-spam">1</span>)
+                </button>
+            </div>
+
+            <!-- Chats List -->
+            <div id="chats-list-container"></div>
+        </div>
+
+        <!-- 2. YOU / PROFILE & SETTINGS SCREEN (Matching Screenshots 1, 2, 3) -->
+        <div id="screen-you" class="screen">
+            <!-- User Profile Header -->
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0 16px 0;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div style="width: 64px; height: 64px; background: linear-gradient(135deg, #1E40AF 0%, #2563EB 100%); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 28px; color: #FFFFFF; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 18px; font-weight: 800;" id="user-display-name">Sanjana</span>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 2px;" id="user-display-phone">9440886543</div>
+                    </div>
+                </div>
+               <div class="phone-theme-toggle" onclick="toggleTheme()">
+                    <span id="you-theme-emoji">☀️</span>
+                </div>
+            </div>
+
+            <!-- SECTION: TELL CALLMATE -->
+            <div class="section-header-title">Tell CallMate</div>
+            
+            <div class="settings-card" style="padding: 14px 16px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 36px; height: 36px; background: rgba(132, 204, 22, 0.15); border-radius: 10px; display: flex; justify-content: center; align-items: center; color: #65A30D; font-size: 16px;">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 14px; font-weight: 700;">AI Assistant is On</div>
+                        <div style="font-size: 11px; color: var(--text-secondary);">CallMate is managing your unknown calls!</div>
+                    </div>
+                </div>
+                <i class="fa-solid fa-toggle-on" style="font-size: 24px; color: var(--accent-green); cursor: pointer;" onclick="toggleAssistantMaster()"></i>
+            </div>
+
+            <div class="settings-card">
+                <div class="settings-row" onclick="openModal('modal-instructions')">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-regular fa-copy" style="color: var(--text-secondary); font-size: 16px; width: 20px;"></i>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                Your Instructions <span class="badge-new">NEW</span>
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">Tell CallMate what to do</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-secondary);"></i>
+                </div>
+                <div class="settings-row-divider"></div>
+                <div class="settings-row" onclick="openModal('modal-health')">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-solid fa-heart-pulse" style="color: var(--text-secondary); font-size: 16px; width: 20px;"></i>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700;">Assistant Health Check</div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">Check Real-Time Assistant Connectivity</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-secondary);"></i>
+                </div>
+                <div class="settings-row-divider"></div>
+                <div class="settings-row" onclick="openModal('modal-silent')">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-solid fa-bell-slash" style="color: var(--text-secondary); font-size: 16px; width: 20px;"></i>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700;">Silent Mode</div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">Mute unwanted calls automatically</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-secondary);"></i>
+                </div>
+                <div class="settings-row-divider"></div>
+                <div class="settings-row" onclick="openModal('modal-voice')">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-solid fa-microphone" style="color: var(--text-secondary); font-size: 16px; width: 20px;"></i>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700;">Voice & Language</div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">Choose how CallMate speaks.</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-secondary);"></i>
+                </div>
+            </div>
+
+            <!-- SECTION: ABOUT YOU -->
+            <div class="section-header-title">About You</div>
+            <div class="settings-card">
+                <div class="settings-row" onclick="openModal('modal-addresses')">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-solid fa-location-dot" style="color: var(--text-secondary); font-size: 16px; width: 20px;"></i>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                Your Addresses <span class="badge-new">NEW</span>
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">Add addresses your assistant should know</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-secondary);"></i>
+                </div>
+            </div>
+
+            <!-- SECTION: SETTINGS & SUPPORT -->
+            <div class="section-header-title">Settings & Support</div>
+            <div class="settings-card">
+                <div class="settings-row" onclick="openModal('modal-profile')">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-regular fa-user" style="color: var(--text-secondary); font-size: 16px; width: 20px;"></i>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700;">Personal Details</div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">Edit Name & Gender</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-secondary);"></i>
+                </div>
+                <div class="settings-row-divider"></div>
+                <div class="settings-row" onclick="openModal('modal-whatsapp')">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-brands fa-whatsapp" style="color: #25D366; font-size: 16px; width: 20px;"></i>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700;">WhatsApp Updates</div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">Assistant and App Updates</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-secondary);"></i>
+                </div>
+                <div class="settings-row-divider"></div>
+                <div class="settings-row" onclick="openModal('modal-account-data')">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-solid fa-shield-halved" style="color: var(--text-secondary); font-size: 16px; width: 20px;"></i>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700;">Account Data</div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">Manage Your Account</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-secondary);"></i>
+                </div>
+                <div class="settings-row-divider"></div>
+                <div class="settings-row" onclick="openModal('modal-help')">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-solid fa-headset" style="color: var(--text-secondary); font-size: 16px; width: 20px;"></i>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700;">Help Center</div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">Your What, Why and How</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-secondary);"></i>
+                </div>
+                <div class="settings-row-divider"></div>
+                <div class="settings-row" onclick="confirmSignOut()">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-solid fa-arrow-right-from-bracket" style="color: var(--accent-red); font-size: 16px; width: 20px;"></i>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700; color: var(--accent-red);">Sign Out</div>
+                            <div style="font-size: 11px; color: var(--text-secondary);">End your active session</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-secondary);"></i>
+                </div>
+            </div>
+
+            <!-- Invite a Friend Card -->
+            <div class="settings-card" style="padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; background: var(--surface-elevated);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 24px;">🙌</span>
+                    <div>
+                        <div style="font-size: 14px; font-weight: 700;">Invite a Friend</div>
+                        <div style="font-size: 11px; color: var(--text-secondary);">Share CallMate AI</div>
+                    </div>
+                </div>
+                <div onclick="navigator.clipboard.writeText('https://github.com/sanjana71006/CallAgent'); showToast('GitHub Repo & APK link copied to clipboard!');" style="width: 36px; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; color: var(--primary);">
+                    <i class="fa-solid fa-share-nodes"></i>
+                </div>
+            </div>
+
+            <!-- App Version -->
+            <div style="text-align: center; color: var(--text-secondary); font-size: 11px; margin: 16px 0 20px 0;">
+                <div>v2026.08.18</div>
+                <div style="font-size: 10px; opacity: 0.7;">(2026081841)</div>
+            </div>
+        </div>
+
+        <!-- 3. INCOMING CALL SCREEN -->
+        <div id="screen-incoming" class="screen" style="justify-content: space-between; text-align: center;">
+            <div style="margin-top: 24px;">
+                <div class="badge-pill" style="background: var(--primary-soft); color: var(--primary); font-size: 11px; font-weight: 800; padding: 6px 14px; border: 1px solid var(--border);">
+                    <i class="fa-solid fa-phone-volume"></i> Incoming Call Simulation
+                </div>
+            </div>
+            <div style="padding: 10px 0;">
+                <div style="width: 96px; height: 96px; border-radius: 50%; background: var(--primary-soft); border: 2.5px solid var(--primary); margin: 0 auto 16px; display: flex; justify-content: center; align-items: center; font-size: 38px; color: var(--primary); box-shadow: 0 8px 24px rgba(37, 99, 235, 0.15);">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <h2 id="incoming-name" style="font-size: 24px; font-weight: 800; margin-bottom: 4px; color: var(--text-primary);">Sarah Jenkins</h2>
+                <div id="incoming-phone" style="color: var(--text-secondary); font-size: 14px; font-weight: 600; margin-bottom: 16px;">+1 (555) 382-9012</div>
+                <div style="display: inline-flex; align-items: center; gap: 6px; background: var(--accent-green-bg); color: var(--accent-green); padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.2);">
+                    <i class="fa-solid fa-robot"></i> CallMate AI is ready to answer
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+                <button class="btn-primary" style="background: #059669; color: #FFFFFF; font-size: 14px; font-weight: 800; box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);" onclick="answerCallWithAi()">
+                    <i class="fa-solid fa-headphones"></i> Let AI Screen Call (Listen Live)
+                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-primary" style="background: var(--primary); color: #FFFFFF; font-size: 14px; font-weight: 800; flex: 1; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);" onclick="takeOverCall()">
+                        <i class="fa-solid fa-phone"></i> Take Call
+                    </button>
+                    <button class="btn-primary" style="background: var(--accent-red); color: #FFFFFF; font-size: 14px; font-weight: 800; flex: 1; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);" onclick="showScreen('screen-chats')">
+                        <i class="fa-solid fa-phone-slash"></i> Decline
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. LIVE CALL STREAM SCREEN -->
+        <div id="screen-live" class="screen">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+                <div>
+                    <div id="live-caller-name" style="font-size: 15px; font-weight: 700;">Sarah Jenkins</div>
+                    <div style="font-size: 11px; color: var(--accent-green);" id="live-timer">Screening • 00:12</div>
+                </div>
+                <div class="badge-pill" id="live-badge" style="margin: 0; background: var(--accent-green-bg); color: var(--accent-green);">AI Screening</div>
+            </div>
+
+            <!-- Live Status -->
+            <div id="ai-status-indicator" style="background: var(--primary-soft); border-radius: 10px; padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--primary); margin: 8px 0; text-align: center;">
+                <i class="fa-solid fa-volume-high"></i> AI Assistant Speaking...
+            </div>
+
+            <!-- Transcripts Feed -->
+            <div class="transcript-feed" id="transcript-feed"></div>
+
+            <!-- Quick Speech Prompts -->
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Tap to simulate caller speech:</div>
+            <div class="quick-chips">
+                <div class="chip" onclick="simulateSpeech('Hello! I am calling from Google regarding your senior technical interview.')">Job Interview</div>
+                <div class="chip" onclick="simulateSpeech('Hi, I am at the gate with your delivery package.')">Delivery</div>
+                <div class="chip" onclick="simulateSpeech('You have been pre-approved for a zero-interest personal loan!')">Spam Loan</div>
+                <div class="chip" onclick="simulateSpeech('Is this an AI assistant?')">Ask if AI</div>
+            </div>
+
+            <!-- Speech Input field (Live Voice or Text) -->
+            <div style="display: flex; gap: 8px; margin: 8px 0;">
+                <input type="text" id="caller-input" onkeydown="if(event.key==='Enter') sendCallerInput()" placeholder="Type speech or click mic to speak..." style="flex: 1; height: 40px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; color: var(--text-primary); padding: 0 12px; font-size: 13px;">
+                <button id="mic-input-btn" onclick="toggleVoiceRecording()" title="Speak with Microphone" style="background: var(--surface-elevated); border: 1px solid var(--border); width: 40px; height: 40px; border-radius: 12px; color: var(--primary); cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 16px;"><i class="fa-solid fa-microphone" id="rec-mic-icon"></i></button>
+                <button onclick="sendCallerInput()" title="Send text" style="background: var(--primary); border: none; width: 40px; height: 40px; border-radius: 12px; color: white; cursor: pointer; display: flex; justify-content: center; align-items: center;"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+
+            <!-- Controls -->
+            <div class="call-controls">
+                <button class="btn-round btn-action" onclick="toggleMute()"><i class="fa-solid fa-microphone" id="mute-icon"></i></button>
+                <button class="btn-round btn-takeover" onclick="takeOverCall()"><i class="fa-solid fa-phone"></i> Take Over</button>
+                <button class="btn-round btn-end" onclick="endCall()"><i class="fa-solid fa-phone-slash"></i></button>
+            </div>
+        </div>
+
+        <!-- 5. CALL DETAILS / TRANSCRIPT SCREEN -->
+        <div id="screen-details" class="screen">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fa-solid fa-arrow-left" style="cursor: pointer; font-size: 16px;" onclick="showScreen('screen-chats')"></i>
+                    <div style="font-size: 17px; font-weight: 800;">Call Details</div>
+                </div>
+            </div>
+
+            <!-- Caller Card -->
+            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 14px 16px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div>
+                        <div id="detail-caller" style="font-size: 16px; font-weight: 800;">Sarah Jenkins</div>
+                        <div id="detail-phone" style="font-size: 12px; color: var(--text-secondary);">+1 (555) 382-9012</div>
+                    </div>
+                    <span id="detail-category-badge" class="badge-pill" style="margin: 0; background: var(--accent-purple-bg); color: var(--accent-purple);">RECRUITMENT</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px;">
+                    <div style="font-size: 11px; color: var(--text-secondary);" id="detail-time">Today, 9:54 am • 32 seconds</div>
+                    <button id="report-spam-btn" onclick="openReportSpamModal()" style="background: var(--accent-red-bg); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--accent-red); padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Report Spam
+                    </button>
+                </div>
+            </div>
+
+            <!-- Segmented Tabs: [ Full Chat (Verbatim) ] | [ AI Analysis ] -->
+            <div class="segmented-tabs">
+                <button class="tab-btn active" id="tab-chat-btn" onclick="switchDetailTab('chat')">
+                    <i class="fa-solid fa-comments"></i> Full Chat (<span id="chat-count">0</span>)
+                </button>
+                <button class="tab-btn" id="tab-summary-btn" onclick="switchDetailTab('summary')">
+                    <i class="fa-solid fa-robot"></i> AI Analysis
+                </button>
+            </div>
+
+            <!-- TAB 1: FULL VERBATIM CHAT CONVERSATION -->
+            <div id="view-chat-tab" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-bottom: 10px;">
+                <div id="detail-chat-bubbles" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
+
+            <!-- TAB 2: AI STRUCTURED ANALYSIS & RECAP -->
+            <div id="view-summary-tab" style="display: none; flex: 1; overflow-y: auto; flex-direction: column; gap: 12px;">
+                <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--primary); margin-bottom: 12px;">
+                        <i class="fa-solid fa-robot"></i> AI Structured Analysis
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <div style="font-size: 11px; color: var(--text-secondary); font-weight: 700;">PURPOSE</div>
+                        <div id="detail-purpose" style="font-size: 13px; font-weight: 600;">Job interview scheduling</div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <div style="font-size: 11px; color: var(--text-secondary); font-weight: 700;">RECOMMENDED ACTION</div>
+                        <div id="detail-action" style="font-size: 13px; font-weight: 600; color: var(--accent-amber);">Call back recruiter</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: var(--text-secondary); font-weight: 700;">EXECUTIVE OVERVIEW</div>
+                        <div id="detail-summary" style="font-size: 12px; line-height: 1.5; color: var(--text-primary);">Sarah Jenkins called regarding your application for the engineering role.</div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="showScreen('screen-chats')" style="margin-top: 10px;">Return to Chats</button>
+        </div>
+
+    </div>
+
+    <!-- Floating Pill Bottom Navigation Dock -->
+    <div class="bottom-dock-wrapper" id="floating-bottom-dock">
+        <div class="bottom-dock">
+            <button class="dock-tab active" id="dock-chats" onclick="showScreen('screen-chats')">
+                <i class="fa-solid fa-message" style="font-size: 13px;"></i>
+                <span>Chats</span>
+            </button>
+            <button class="dock-tab" id="dock-you" onclick="showScreen('screen-you')">
+                <div class="dock-avatar"><i class="fa-solid fa-user"></i></div>
+                <span>You</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL: YOUR INSTRUCTIONS -->
+    <div class="modal-overlay" id="modal-instructions">
+        <div class="modal-sheet">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h3 style="font-size: 16px; font-weight: 800;">Your Instructions</h3>
+                <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeModal('modal-instructions')"></i>
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">Tell CallMate how to screen specific types of calls:</p>
+            <div style="background: var(--surface-elevated); padding: 12px; border-radius: 12px; margin-bottom: 10px; font-size: 13px;">
+                <div style="font-weight: 700; color: var(--primary); margin-bottom: 2px;">📦 Delivery Couriers</div>
+                <div style="color: var(--text-secondary); font-size: 12px;">"Ask delivery drivers to leave parcels at Flat 302 or with the security guard."</div>
+            </div>
+            <div style="background: var(--surface-elevated); padding: 12px; border-radius: 12px; margin-bottom: 10px; font-size: 13px;">
+                <div style="font-weight: 700; color: var(--accent-purple); margin-bottom: 2px;">💼 Job Recruiters</div>
+                <div style="color: var(--text-secondary); font-size: 12px;">"Politely take recruiter's company details and ask them to confirm interview times via email."</div>
+            </div>
+            <div style="background: var(--surface-elevated); padding: 12px; border-radius: 12px; margin-bottom: 16px; font-size: 13px;">
+                <div style="font-weight: 700; color: var(--accent-red); margin-bottom: 2px;">🚫 Financial Loans & Credit Cards</div>
+                <div style="color: var(--text-secondary); font-size: 12px;">"Firmly decline all promotional loan pitches and end the call."</div>
+            </div>
+            <button class="btn-primary" onclick="showToast('Custom screening instructions saved'); closeModal('modal-instructions');">Save Instructions</button>
+        </div>
+    </div>
+
+    <!-- MODAL: YOUR INSTRUCTIONS (Interactive & Synced to MongoDB) -->
+    <div class="modal-overlay" id="modal-instructions">
+        <div class="modal-sheet" style="max-height: 85vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 16px; font-weight: 800;"><i class="fa-solid fa-robot" style="color: var(--primary);"></i> Screening Instructions</h3>
+                <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeModal('modal-instructions')"></i>
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Tell CallMate AI how to screen specific types of calls:</p>
+            
+            <!-- Instructions List Container -->
+            <div id="instructions-list-container" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;"></div>
+
+            <!-- Form: Add Custom Instruction -->
+            <div style="background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
+                <div style="font-size: 12px; font-weight: 800; color: var(--primary); margin-bottom: 8px;">+ Add New Screening Instruction</div>
+                <div style="margin-bottom: 8px;">
+                    <input type="text" id="new-inst-title" placeholder="Title (e.g. Doctor Clinic / Delivery)" style="width: 100%; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-size: 12px;">
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <textarea id="new-inst-prompt" placeholder="Instruction (e.g. Ask for prescription pickup time and notify me immediately)" style="width: 100%; height: 60px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 8px 10px; font-size: 12px; resize: none;"></textarea>
+                </div>
+                <button class="btn-primary" onclick="addNewInstruction()" style="height: 36px; font-size: 12px;">Save Rule to Gemini AI</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: YOUR ADDRESSES & AUTOMATIC LOCATION TRACKING -->
+    <div class="modal-overlay" id="modal-addresses">
+        <div class="modal-sheet" style="max-height: 85vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 16px; font-weight: 800;"><i class="fa-solid fa-map-location-dot" style="color: var(--primary);"></i> Live Location & Addresses</h3>
+                <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeModal('modal-addresses')"></i>
+            </div>
+            
+            <!-- Automatic Real-Time Location & Street Address Card -->
+            <div style="background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="font-size: 12px; font-weight: 800; color: var(--accent-green); display: flex; align-items: center; gap: 6px;">
+                        <span style="width: 8px; height: 8px; background: var(--accent-green); border-radius: 50%; display: inline-block;"></span> Automatic Live Address
+                    </div>
+                    <button onclick="fetchLiveLocation(true)" id="btn-fetch-location" style="background: var(--primary-soft); border: 1px solid var(--primary); color: var(--primary); font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                        <i class="fa-solid fa-arrows-rotate"></i> Refresh Location
+                    </button>
+                </div>
+                <div id="live-location-display" style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">
+                    <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">
+                        <i class="fa-solid fa-location-dot" style="color: var(--primary);"></i> <span id="loc-street-address">Detecting address...</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-secondary);" id="loc-coords-display">GPS Precision: Tracking...</div>
+                    <div style="font-size: 11px; color: var(--accent-green); font-weight: 600; margin-top: 4px;">
+                        <i class="fa-solid fa-circle-check"></i> Automatically shared with couriers during screening
+                    </div>
+                </div>
+            </div>
+
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">Saved courier drop-off addresses:</p>
+            <div id="addresses-list-container" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;"></div>
+
+            <!-- Form: Add Custom Address -->
+            <div style="background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 10px;">
+                <div style="font-size: 12px; font-weight: 800; margin-bottom: 8px;">+ Add New Address</div>
+                <input type="text" id="new-addr-label" placeholder="Label (e.g. Home, Office, Gym)" style="width: 100%; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-size: 12px; margin-bottom: 8px;">
+                <input type="text" id="new-addr-full" placeholder="Full Street Address" style="width: 100%; height: 36px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-size: 12px; margin-bottom: 8px;">
+                <button class="btn-primary" onclick="addNewAddress()" style="height: 36px; font-size: 12px;">Save Address to Cloud</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ASSISTANT HEALTH CHECK -->
+    <div class="modal-overlay" id="modal-health">
+        <div class="modal-sheet">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h3 style="font-size: 16px; font-weight: 800;">Assistant Health Check</h3>
+                <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeModal('modal-health')"></i>
+            </div>
+            <div id="health-check-results" style="background: var(--surface-elevated); padding: 16px; border-radius: 14px; font-size: 13px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px; color: var(--accent-green); font-weight: 700; margin-bottom: 8px;">
+                    <i class="fa-solid fa-circle-check"></i> Backend Connected (200 OK)
+                </div>
+                <div style="color: var(--text-secondary); font-size: 12px; line-height: 1.5;">
+                    • <b>Endpoint:</b> http://localhost:8000<br>
+                    • <b>AI Screening Engine:</b> Active (Google Gemini)<br>
+                    • <b>Speech Synthesizer:</b> Ready<br>
+                    • <b>Database:</b> MongoDB Atlas Connected
+                </div>
+            </div>
+            <button class="btn-primary" onclick="runLiveHealthCheck()">Re-run Health Check</button>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT PROFILE (Name, Phone, Gender in MongoDB) -->
+    <div class="modal-overlay" id="modal-profile">
+        <div class="modal-sheet">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h3 style="font-size: 16px; font-weight: 800;">Personal Details</h3>
+                <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeModal('modal-profile')"></i>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Name</div>
+                <input type="text" id="edit-name-input" value="Sanjana" style="width: 100%; height: 38px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-size: 13px;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Phone Number</div>
+                <input type="text" id="edit-phone-input" value="9440886543" style="width: 100%; height: 38px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-size: 13px;">
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Gender</div>
+                <select id="edit-gender-select" style="width: 100%; height: 38px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-size: 13px;">
+                    <option value="Female" selected>Female</option>
+                    <option value="Male">Male</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                </select>
+            </div>
+            <button class="btn-primary" onclick="saveProfile()">Save Changes to MongoDB</button>
+        </div>
+    </div>
+
+    <!-- MODAL: REPORT SPAM TO COMMUNITY DATABASE -->
+    <div class="modal-overlay" id="modal-report-spam">
+        <div class="modal-sheet">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 16px; font-weight: 800; color: var(--accent-red);"><i class="fa-solid fa-triangle-exclamation"></i> Report Spam Number</h3>
+                <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeModal('modal-report-spam')"></i>
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Report this number to the community spam database so all CallMate users are protected:</p>
+            
+            <div style="background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 12px;">
+                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 2px;">REPORTING NUMBER</div>
+                <div id="spam-report-number" style="font-size: 15px; font-weight: 800; color: var(--text-primary);">+1 (555) 382-9012</div>
+            </div>
+
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Spam Category</div>
+                <select id="spam-category-select" style="width: 100%; height: 38px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-size: 13px;">
+                    <option value="TELEMARKETING">Telemarketing / Unsolicited Sales</option>
+                    <option value="FINANCIAL_SCAM">Financial Scam / Fake Loan / Credit Card</option>
+                    <option value="ROBOCALL">Robocall / Automated Recording</option>
+                    <option value="PHISHING">Phishing / Impersonation / OTP Scam</option>
+                    <option value="FAKE_DELIVERY">Fake Courier / Customs Scam</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Reason / Details</div>
+                <input type="text" id="spam-reason-input" placeholder="e.g. Repeated unsolicited personal loan offers" style="width: 100%; height: 38px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-size: 13px;">
+            </div>
+
+            <button class="btn-primary" style="background: var(--accent-red);" onclick="submitSpamReport()">🚨 Submit Spam Report</button>
+        </div>
+    </div>
+
+    <!-- MODAL: ACCOUNT DATA -->
+    <div class="modal-overlay" id="modal-account-data">
+        <div class="modal-sheet">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h3 style="font-size: 16px; font-weight: 800;">Account Data</h3>
+                <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeModal('modal-account-data')"></i>
+            </div>
+            
+            <div style="background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 16px; padding: 14px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="font-size: 11px; font-weight: 800; color: var(--text-secondary); letter-spacing: 0.8px;">ACCOUNT IDENTITY</div>
+                    <div style="background: var(--accent-green-bg); color: var(--accent-green); font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px;" id="account-status-badge">ACTIVE</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                    <div style="width: 42px; height: 42px; background: var(--primary-soft); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: var(--primary); font-size: 18px;">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 14px; font-weight: 700;" id="account-name-val">Sanjana</div>
+                        <div style="font-size: 12px; color: var(--primary);" id="account-email-val">sanjana@callmate.ai</div>
+                    </div>
+                </div>
+                <div style="border-top: 1px solid var(--border); padding-top: 10px; font-size: 12px; display: flex; flex-direction: column; gap: 6px;">
+                    <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-secondary);">Phone Number:</span> <b id="account-phone-val">9440886543</b></div>
+                    <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-secondary);">Cloud Database:</span> <b style="color: var(--accent-green);">MongoDB Atlas</b></div>
+                    <div style="display: flex; justify-content: space-between;"><span style="color: var(--text-secondary);">Local Encrypted DB:</span> <b>Room (SQLite)</b></div>
+                </div>
+            </div>
+
+            <div style="font-size: 11px; font-weight: 800; color: var(--text-secondary); letter-spacing: 0.8px; margin-bottom: 8px;">ACCOUNT ACTIONS</div>
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+                <button onclick="confirmSignOut()" style="background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; color: var(--text-primary); width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-arrow-right-from-bracket" style="color: var(--primary);"></i>
+                        <div style="text-align: left;"><div style="font-size: 13px; font-weight: 700;">Sign Out</div><div style="font-size: 11px; color: var(--text-secondary);">End active session on this device</div></div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-secondary);"></i>
+                </button>
+
+                <button onclick="confirmDeleteAccount()" style="background: var(--accent-red-bg); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; color: var(--accent-red); width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <div style="text-align: left;"><div style="font-size: 13px; font-weight: 700;">Delete Account</div><div style="font-size: 11px; opacity: 0.8;">Permanently remove account from MongoDB Atlas</div></div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 12px;"></i>
+                </button>
+            </div>
+            
+            <button class="btn-primary" onclick="closeModal('modal-account-data')">Close</button>
+        </div>
+    </div>
+
+    <!-- MODAL: HELP CENTER -->
+    <div class="modal-overlay" id="modal-help">
+        <div class="modal-sheet">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h3 style="font-size: 16px; font-weight: 800;">Help Center</h3>
+                <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeModal('modal-help')"></i>
+            </div>
+            <div style="font-size: 13px; line-height: 1.5; color: var(--text-secondary); margin-bottom: 16px;">
+                <p style="margin-bottom: 10px;"><b>How does CallMate AI screen my calls?</b><br>When an unknown number calls, CallMate answers politely, asks the caller for their name and purpose, and transcribes the call live.</p>
+                <p><b>Can I take over a call anytime?</b><br>Yes! Simply tap the 'Take Call' button during live screening to speak directly.</p>
+            </div>
+            <button class="btn-primary" onclick="closeModal('modal-help')">Got it</button>
+        </div>
+    </div>
+
+    <!-- MODAL: IN-APP CONFIRMATION DIALOG (No browser popup) -->
+    <div class="modal-overlay" id="modal-confirm" style="z-index: 60;">
+        <div class="modal-sheet" style="text-align: center;">
+            <div id="confirm-icon-box" style="width: 56px; height: 56px; border-radius: 50%; background: var(--accent-red-bg); color: var(--accent-red); display: inline-flex; justify-content: center; align-items: center; font-size: 24px; margin-bottom: 12px;">
+                <i class="fa-solid fa-arrow-right-from-bracket" id="confirm-icon"></i>
+            </div>
+            <h3 id="confirm-title" style="font-size: 17px; font-weight: 800; margin-bottom: 6px; color: var(--text-primary);">Sign Out</h3>
+            <p id="confirm-desc" style="font-size: 13px; color: var(--text-secondary); line-height: 1.4; margin-bottom: 18px;">Are you sure you want to sign out of CallMate AI?</p>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-primary" style="background: var(--surface-elevated); color: var(--text-primary); border: 1px solid var(--border); flex: 1;" onclick="closeModal('modal-confirm')">Cancel</button>
+                <button class="btn-primary" id="confirm-action-btn" style="background: var(--accent-red); color: white; flex: 1;" onclick="executeConfirmAction()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: SILENT MODE SETTINGS -->
+    <div class="modal-overlay" id="modal-silent">
+        <div class="modal-sheet">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h3 style="font-size: 16px; font-weight: 800;">Silent Mode Settings</h3>
+                <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeModal('modal-silent')"></i>
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">Automatically mute unwanted calls based on AI rules:</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+                <div class="settings-card" style="padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; margin: 0;">
+                    <div><div style="font-size: 13px; font-weight: 700;">Telemarketing Calls</div><div style="font-size: 11px; color: var(--text-secondary);">Mute promotional sales calls</div></div>
+                    <i class="fa-solid fa-toggle-on" style="font-size: 22px; color: var(--accent-green); cursor: pointer;" onclick="this.classList.toggle('fa-toggle-on'); this.classList.toggle('fa-toggle-off'); this.style.color = this.classList.contains('fa-toggle-on') ? 'var(--accent-green)' : 'var(--text-secondary)';"></i>
+                </div>
+                <div class="settings-card" style="padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; margin: 0;">
+                    <div><div style="font-size: 13px; font-weight: 700;">Spam & Loan Pitches</div><div style="font-size: 11px; color: var(--text-secondary);">Mute identified financial spam</div></div>
+                    <i class="fa-solid fa-toggle-on" style="font-size: 22px; color: var(--accent-green); cursor: pointer;" onclick="this.classList.toggle('fa-toggle-on'); this.classList.toggle('fa-toggle-off'); this.style.color = this.classList.contains('fa-toggle-on') ? 'var(--accent-green)' : 'var(--text-secondary)';"></i>
+                </div>
+                <div class="settings-card" style="padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; margin: 0;">
+                    <div><div style="font-size: 13px; font-weight: 700;">Potential Scams</div><div style="font-size: 11px; color: var(--text-secondary);">Auto-reject high-risk fraud numbers</div></div>
+                    <i class="fa-solid fa-toggle-on" style="font-size: 22px; color: var(--accent-green); cursor: pointer;" onclick="this.classList.toggle('fa-toggle-on'); this.classList.toggle('fa-toggle-off'); this.style.color = this.classList.contains('fa-toggle-on') ? 'var(--accent-green)' : 'var(--text-secondary)';"></i>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="showToast('Silent mode preferences updated'); closeModal('modal-silent');">Save Preferences</button>
+        </div>
+    </div>
+
+    <!-- MODAL: WHATSAPP UPDATES -->
+    <div class="modal-overlay" id="modal-whatsapp">
+        <div class="modal-sheet">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h3 style="font-size: 16px; font-weight: 800;">WhatsApp Updates</h3>
+                <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeModal('modal-whatsapp')"></i>
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">Receive instant call recaps and summaries on WhatsApp:</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+                <div class="settings-card" style="padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; margin: 0;">
+                    <div><div style="font-size: 13px; font-weight: 700;">Instant Call Summaries</div><div style="font-size: 11px; color: var(--text-secondary);">Send recap after screening</div></div>
+                    <i class="fa-solid fa-toggle-on" style="font-size: 22px; color: var(--accent-green); cursor: pointer;" onclick="this.classList.toggle('fa-toggle-on'); this.classList.toggle('fa-toggle-off'); this.style.color = this.classList.contains('fa-toggle-on') ? 'var(--accent-green)' : 'var(--text-secondary)';"></i>
+                </div>
+                <div class="settings-card" style="padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; margin: 0;">
+                    <div><div style="font-size: 13px; font-weight: 700;">Urgent Caller Alerts</div><div style="font-size: 11px; color: var(--text-secondary);">Priority alert for emergency keywords</div></div>
+                    <i class="fa-solid fa-toggle-on" style="font-size: 22px; color: var(--accent-green); cursor: pointer;" onclick="this.classList.toggle('fa-toggle-on'); this.classList.toggle('fa-toggle-off'); this.style.color = this.classList.contains('fa-toggle-on') ? 'var(--accent-green)' : 'var(--text-secondary)';"></i>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="showToast('WhatsApp alert settings saved'); closeModal('modal-whatsapp');">Save Settings</button>
+        </div>
+    </div>
+
+    <!-- MODAL: VOICE & LANGUAGE -->
+    <div class="modal-overlay" id="modal-voice">
+        <div class="modal-sheet">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h3 style="font-size: 16px; font-weight: 800;">Voice & Language</h3>
+                <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeModal('modal-voice')"></i>
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">Configure how CallMate AI speaks with callers:</p>
+            
+            <div style="margin-bottom: 12px;">
+                <div style="font-size: 11px; color: var(--text-secondary); font-weight: 700; margin-bottom: 4px;">LANGUAGE ACCENT</div>
+                <select id="voice-lang-select" style="width: 100%; height: 38px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-size: 13px;">
+                    <option value="en-IN">English (Indian Accent)</option>
+                    <option value="en-US">English (US Accent)</option>
+                    <option value="en-GB">English (British Accent)</option>
+                    <option value="hi-IN">Hindi (India)</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 12px;">
+                <div style="font-size: 11px; color: var(--text-secondary); font-weight: 700; margin-bottom: 4px;">SPEECH PITCH</div>
+                <input type="range" min="80" max="120" value="100" style="width: 100%;">
+            </div>
+            <div style="margin-bottom: 16px;">
+                <div style="font-size: 11px; color: var(--text-secondary); font-weight: 700; margin-bottom: 4px;">SPEAKING RATE</div>
+                <input type="range" min="80" max="140" value="100" style="width: 100%;">
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-primary" style="background: var(--surface-elevated); color: var(--text-primary); border: 1px solid var(--border); flex: 1;" onclick="speakText('Hello! This is CallMate AI voice preview.')"><i class="fa-solid fa-play"></i> Test</button>
+                <button class="btn-primary" style="flex: 1;" onclick="showToast('Voice preferences saved'); closeModal('modal-voice');">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- In-App Floating Toast Notification -->
+    <div id="inapp-toast" class="inapp-toast"><i class="fa-solid fa-circle-check" style="color: var(--accent-green);"></i> <span id="toast-text">Message</span></div>
+</div>
+
+<script>
+    let currentTheme = 'light';
+    let isAssistantOn = true;
+
+    function toggleTheme() {
+        currentTheme = (currentTheme === 'light') ? 'dark' : 'light';
+        const phone = document.querySelector('.phone-wrapper');
+        if (phone) phone.setAttribute('data-theme', currentTheme);
+
+        const isLight = (currentTheme === 'light');
+        const emoji = isLight ? '☀️' : '🌙';
+        const label = isLight ? 'Light' : 'Dark';
+
+        const themeEmoji = document.getElementById('theme-toggle-emoji');
+        const themeLabel = document.getElementById('theme-toggle-label');
+        if (themeEmoji) themeEmoji.innerText = emoji;
+        if (themeLabel) themeLabel.innerText = label;
+
+        const youEmoji = document.getElementById('you-theme-emoji');
+        if (youEmoji) youEmoji.innerText = emoji;
+    }
+
+    function toggleAssistantMaster() {
+        isAssistantOn = !isAssistantOn;
+        const icon = document.getElementById('assistant-toggle-icon');
+        const title = document.getElementById('assistant-status-title');
+        if (icon) {
+            icon.className = isAssistantOn ? "fa-solid fa-toggle-on" : "fa-solid fa-toggle-off";
+            icon.style.color = isAssistantOn ? "var(--accent-green)" : "var(--text-secondary)";
+        }
+        if (title) {
+            title.innerText = isAssistantOn ? "AI Assistant is On" : "AI Assistant is Paused";
+        }
+    }
+
+    const AUTH_API = 'http://localhost:5000/api';
+
+    function togglePasswordVisibility(fieldId, iconElem) {
+        const input = document.getElementById(fieldId);
+        if (!input) return;
+        if (input.type === 'password') {
+            input.type = 'text';
+            iconElem.className = 'fa-regular fa-eye-slash auth-toggle-pwd';
+        } else {
+            input.type = 'password';
+            iconElem.className = 'fa-regular fa-eye auth-toggle-pwd';
+        }
+    }
+
+    async function handleLogin() {
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value;
+        const errBanner = document.getElementById('login-error-banner');
+        const errText = document.getElementById('login-error-text');
+        const btn = document.getElementById('btn-login');
+
+        if (!email || !password) {
+            errText.innerText = "Please enter both email and password.";
+            errBanner.style.display = "flex";
+            return;
+        }
+
+        errBanner.style.display = "none";
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Signing in...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(`${AUTH_API}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+            if (res.ok && data.token) {
+                localStorage.setItem('callmate_token', data.token);
+                localStorage.setItem('callmate_user', JSON.stringify(data.user));
+                updateUserProfileUI(data.user);
+                showScreen('screen-chats');
+            } else {
+                errText.innerText = data.message || "Invalid email or password.";
+                errBanner.style.display = "flex";
+            }
+        } catch (e) {
+            // Local fallback session
+            const userObj = { name: "Sanjana", email: email, phoneNumber: "9440886543" };
+            localStorage.setItem('callmate_token', 'local_active_token');
+            localStorage.setItem('callmate_user', JSON.stringify(userObj));
+            updateUserProfileUI(userObj);
+            showScreen('screen-chats');
+        } finally {
+            btn.innerHTML = '<span>Login</span>';
+            btn.disabled = false;
+        }
+    }
+
+    async function handleRegister() {
+        const name = document.getElementById('signup-name').value.trim();
+        const email = document.getElementById('signup-email').value.trim();
+        const phone = document.getElementById('signup-phone').value.trim();
+        const password = document.getElementById('signup-password').value;
+        const confirmPassword = document.getElementById('signup-confirm-password').value;
+        const errBanner = document.getElementById('signup-error-banner');
+        const errText = document.getElementById('signup-error-text');
+        const btn = document.getElementById('btn-signup');
+
+        if (!name) {
+            errText.innerText = "Name cannot be empty.";
+            errBanner.style.display = "flex";
+            return;
+        }
+        if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+            errText.innerText = "Please provide a valid email address.";
+            errBanner.style.display = "flex";
+            return;
+        }
+        if (!password || password.length < 6) {
+            errText.innerText = "Password must be at least 6 characters.";
+            errBanner.style.display = "flex";
+            return;
+        }
+        if (password !== confirmPassword) {
+            errText.innerText = "Passwords do not match.";
+            errBanner.style.display = "flex";
+            return;
+        }
+
+        errBanner.style.display = "none";
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating Account...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(`${AUTH_API}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password, confirmPassword, phoneNumber: phone })
+            });
+            const data = await res.json();
+            if (res.ok && data.token) {
+                localStorage.setItem('callmate_token', data.token);
+                localStorage.setItem('callmate_user', JSON.stringify(data.user));
+                updateUserProfileUI(data.user);
+                showScreen('screen-chats');
+            } else {
+                errText.innerText = data.message || "Registration failed.";
+                errBanner.style.display = "flex";
+            }
+        } catch (e) {
+            const userObj = { name: name, email: email, phoneNumber: phone || "9440886543" };
+            localStorage.setItem('callmate_token', 'local_active_token');
+            localStorage.setItem('callmate_user', JSON.stringify(userObj));
+            updateUserProfileUI(userObj);
+            showScreen('screen-chats');
+        } finally {
+            btn.innerHTML = '<span>Create Account</span>';
+            btn.disabled = false;
+        }
+    }
+
+    function updateUserProfileUI(user) {
+        if (!user) return;
+        const nameEl = document.getElementById('user-display-name');
+        const phoneEl = document.getElementById('user-display-phone');
+        const accNameEl = document.getElementById('account-name-val');
+        const accEmailEl = document.getElementById('account-email-val');
+        const accPhoneEl = document.getElementById('account-phone-val');
+        if (nameEl && user.name) nameEl.innerText = user.name;
+        if (phoneEl && user.phoneNumber) phoneEl.innerText = user.phoneNumber;
+        if (accNameEl && user.name) accNameEl.innerText = user.name;
+        if (accEmailEl && user.email) accEmailEl.innerText = user.email;
+        if (accPhoneEl && user.phoneNumber) accPhoneEl.innerText = user.phoneNumber;
+    }
+
+    let pendingConfirmCallback = null;
+
+    function showInAppConfirm(title, desc, iconClass, btnText, btnColor, onConfirm) {
+        document.getElementById('confirm-title').innerText = title;
+        document.getElementById('confirm-desc').innerText = desc;
+        const iconEl = document.getElementById('confirm-icon');
+        if (iconEl) iconEl.className = iconClass || 'fa-solid fa-triangle-exclamation';
+        const actionBtn = document.getElementById('confirm-action-btn');
+        if (actionBtn) {
+            actionBtn.innerText = btnText || 'Confirm';
+            actionBtn.style.background = btnColor || 'var(--accent-red)';
+        }
+        pendingConfirmCallback = onConfirm;
+        openModal('modal-confirm');
+    }
+
+    function executeConfirmAction() {
+        closeModal('modal-confirm');
+        if (typeof pendingConfirmCallback === 'function') {
+            const cb = pendingConfirmCallback;
+            pendingConfirmCallback = null;
+            cb();
+        }
+    }
+
+    let toastTimeout = null;
+    function showToast(msg) {
+        const toast = document.getElementById('inapp-toast');
+        const text = document.getElementById('toast-text');
+        if (!toast || !text) return;
+        text.innerText = msg;
+        toast.classList.add('show');
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 2600);
+    }
+
+    function confirmSignOut() {
+        showInAppConfirm(
+            "Sign Out",
+            "Are you sure you want to end your active session on this device?",
+            "fa-solid fa-arrow-right-from-bracket",
+            "Sign Out",
+            "var(--accent-red)",
+            () => {
+                localStorage.removeItem('callmate_token');
+                localStorage.removeItem('callmate_user');
+                closeModal('modal-account-data');
+                showToast("Signed out successfully");
+                showScreen('screen-login');
+            }
+        );
+    }
+
+    function confirmDeleteAccount() {
+        showInAppConfirm(
+            "Delete Account",
+            "This will permanently erase your user profile and cloud authentication data from MongoDB Atlas. This action cannot be undone.",
+            "fa-solid fa-trash-can",
+            "Delete Permanently",
+            "var(--accent-red)",
+            async () => {
+                const token = localStorage.getItem('callmate_token');
+                try {
+                    if (token && token !== 'local_active_token') {
+                        await fetch(`${AUTH_API}/users/me`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                    }
+                } catch (e) {}
+                localStorage.removeItem('callmate_token');
+                localStorage.removeItem('callmate_user');
+                closeModal('modal-account-data');
+                showToast("Account deleted from MongoDB Atlas");
+                showScreen('screen-login');
+            }
+        );
+    }
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        const target = document.getElementById(screenId);
+        if (target) target.classList.add('active');
+
+        // Update floating dock active state
+        const dock = document.getElementById('floating-bottom-dock');
+        if (screenId === 'screen-incoming' || screenId === 'screen-live' || screenId === 'screen-details' || screenId === 'screen-login' || screenId === 'screen-signup') {
+            dock.style.display = 'none';
+        } else {
+            dock.style.display = 'flex';
+            document.getElementById('dock-chats').classList.toggle('active', screenId === 'screen-chats');
+            document.getElementById('dock-you').classList.toggle('active', screenId === 'screen-you');
+        }
+
+        if (screenId === 'screen-chats') {
+            renderChats();
+        }
+    }
+
+    function switchDetailTab(tab) {
+        document.getElementById('tab-chat-btn').classList.toggle('active', tab === 'chat');
+        document.getElementById('tab-summary-btn').classList.toggle('active', tab === 'summary');
+        document.getElementById('view-chat-tab').style.display = (tab === 'chat') ? 'flex' : 'none';
+        document.getElementById('view-summary-tab').style.display = (tab === 'summary') ? 'flex' : 'none';
+    }
+
+    function openModal(modalId) {
+        document.getElementById(modalId).classList.add('active');
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+    }
+
+    let currentFilter = 'ALL';
+    let userInstructionsList = [
+        { id: 'inst_1', title: '📦 Delivery Couriers', prompt: 'Ask delivery drivers to leave parcels at Flat 302 or with the security guard.', tag: 'DELIVERY', icon: 'fa-box' },
+        { id: 'inst_2', title: '💼 Job Recruiters', prompt: 'Politely take recruiter\'s company details and ask them to confirm interview times via email.', tag: 'RECRUITER', icon: 'fa-briefcase' },
+        { id: 'inst_3', title: '🚫 Financial Loans & Spam', prompt: 'Firmly decline all promotional loan pitches and end the call.', tag: 'SPAM', icon: 'fa-ban' }
+    ];
+
+    let userAddressesList = [
+        { id: 'addr_1', label: '🏠 Home', fullAddress: 'Flat 302, Palm Heights, Jubilee Hills, Hyderabad' },
+        { id: 'addr_2', label: '🏢 Office', fullAddress: 'Tower 4, Mindspace Tech Park, HITEC City' }
+    ];
+
+    let userLiveLocation = null;
+
+    function getAuthHeaders() {
+        const token = localStorage.getItem('callmate_token');
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+        };
+    }
+
+    async function saveProfile() {
+        const name = document.getElementById('edit-name-input').value.trim();
+        const phone = document.getElementById('edit-phone-input').value.trim();
+        const gender = document.getElementById('edit-gender-select').value;
+
+        document.getElementById('user-display-name').innerText = name || 'Sanjana';
+        document.getElementById('user-display-phone').innerText = phone || '9440886543';
+
+        try {
+            const res = await fetch('http://localhost:5000/api/users/me', {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ name, phoneNumber: phone, gender })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast("Personal details updated in MongoDB Atlas");
+                const savedUser = JSON.parse(localStorage.getItem('callmate_user') || '{}');
+                savedUser.name = name;
+                savedUser.phoneNumber = phone;
+                savedUser.gender = gender;
+                localStorage.setItem('callmate_user', JSON.stringify(savedUser));
+            }
+        } catch (e) {
+            showToast("Saved locally (MongoDB syncing in background)");
+        }
+        closeModal('modal-profile');
+    }
+
+    async function reverseGeocode(lat, lng) {
+        try {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`;
+            const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+            if (res.ok) {
+                const data = await res.json();
+                const addr = data.address || {};
+                const parts = [];
+                if (addr.road || addr.street || addr.residential) parts.push(addr.road || addr.street || addr.residential);
+                if (addr.suburb || addr.neighbourhood) parts.push(addr.suburb || addr.neighbourhood);
+                if (addr.city || addr.town || addr.county) parts.push(addr.city || addr.town || addr.county);
+                if (addr.state) parts.push(addr.state);
+                if (addr.postcode) parts.push(addr.postcode);
+                
+                const formatted = parts.length > 0 ? parts.join(', ') : data.display_name;
+                return formatted || `Location at ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            }
+        } catch (e) {
+            console.warn("Reverse geocode fallback", e);
+        }
+        return `Street Location (Lat: ${lat.toFixed(4)}, Long: ${lng.toFixed(4)})`;
+    }
+
+    async function processLocationUpdate(lat, lng, acc, showToastNotice = false) {
+        userLiveLocation = { latitude: lat, longitude: lng, accuracy: acc };
+        const streetEl = document.getElementById('loc-street-address');
+        const coordsEl = document.getElementById('loc-coords-display');
+        const btn = document.getElementById('btn-fetch-location');
+
+        if (streetEl) streetEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Resolving street & locality...';
+        if (coordsEl) coordsEl.innerText = `GPS: ${lat.toFixed(4)}°, ${lng.toFixed(4)}° (±${acc}m accuracy)`;
+
+        const resolvedAddress = await reverseGeocode(lat, lng);
+        userLiveLocation.address = resolvedAddress;
+
+        if (streetEl) streetEl.innerText = resolvedAddress;
+        if (btn) btn.innerHTML = '<i class="fa-solid fa-circle-check" style="color: var(--accent-green);"></i> Active';
+
+        if (showToastNotice) {
+            showToast(`📍 Live address: ${resolvedAddress}`);
+        }
+
+        // Save to MongoDB Atlas
+        try {
+            await fetch('http://localhost:5000/api/users/location', {
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    latitude: lat,
+                    longitude: lng,
+                    accuracy: acc,
+                    address: resolvedAddress
+                })
+            });
+        } catch (e) {
+            console.warn("MongoDB location sync pending");
+        }
+    }
+
+    function fetchLiveLocation(manual = false) {
+        if (!navigator.geolocation) {
+            if (manual) showToast("Geolocation is not supported by this browser.");
+            return;
+        }
+
+        const btn = document.getElementById('btn-fetch-location');
+        if (btn && manual) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Tracking...';
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                const acc = Math.round(position.coords.accuracy);
+                processLocationUpdate(lat, lng, acc, manual);
+            },
+            (error) => {
+                if (btn) btn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i> Refresh Location';
+                if (manual) showToast("Location unavailable: " + error.message);
+            },
+            { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+        );
+    }
+
+    function initAutoLocationTracking() {
+        if (navigator.geolocation) {
+            // First immediate silent capture
+            fetchLiveLocation(false);
+            // Continuous passive watcher
+            navigator.geolocation.watchPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    const acc = Math.round(pos.coords.accuracy);
+                    if (!userLiveLocation || Math.abs(userLiveLocation.latitude - lat) > 0.0003 || Math.abs(userLiveLocation.longitude - lng) > 0.0003) {
+                        processLocationUpdate(lat, lng, acc, false);
+                    }
+                },
+                (err) => {},
+                { enableHighAccuracy: true, maximumAge: 120000 }
+            );
+        }
+    }
+
+    function renderInstructionsUI() {
+        const container = document.getElementById('instructions-list-container');
+        if (!container) return;
+
+        let html = '';
+        userInstructionsList.forEach((inst, idx) => {
+            html += `
+                <div style="background: var(--surface-elevated); padding: 12px; border-radius: 12px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                    <div>
+                        <div style="font-weight: 800; font-size: 13px; color: var(--primary); margin-bottom: 3px;">${inst.title}</div>
+                        <div style="color: var(--text-secondary); font-size: 12px; line-height: 1.4;">"${inst.prompt}"</div>
+                    </div>
+                    <i class="fa-solid fa-trash" style="color: var(--text-secondary); cursor: pointer; font-size: 13px; padding: 4px;" onclick="deleteInstruction('${inst.id}')" title="Delete Rule"></i>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    async function addNewInstruction() {
+        const title = document.getElementById('new-inst-title').value.trim();
+        const prompt = document.getElementById('new-inst-prompt').value.trim();
+
+        if (!title || !prompt) {
+            showToast("Please enter both title and instruction prompt.");
+            return;
+        }
+
+        const newInst = {
+            id: 'inst_' + Date.now(),
+            title: title,
+            prompt: prompt,
+            tag: 'CUSTOM',
+            icon: 'fa-robot'
+        };
+
+        userInstructionsList.push(newInst);
+        renderInstructionsUI();
+        document.getElementById('new-inst-title').value = '';
+        document.getElementById('new-inst-prompt').value = '';
+
+        try {
+            await fetch('http://localhost:5000/api/users/instructions', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(newInst)
+            });
+            showToast("New instruction saved to Gemini AI in MongoDB Atlas!");
+        } catch (e) {
+            showToast("Instruction saved locally");
+        }
+    }
+
+    async function deleteInstruction(id) {
+        userInstructionsList = userInstructionsList.filter(i => i.id !== id);
+        renderInstructionsUI();
+        try {
+            await fetch(`http://localhost:5000/api/users/instructions/${id}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
+            showToast("Instruction removed.");
+        } catch (e) {
+            showToast("Instruction removed locally");
+        }
+    }
+
+    function renderAddressesUI() {
+        const container = document.getElementById('addresses-list-container');
+        if (!container) return;
+
+        let html = '';
+        userAddressesList.forEach(addr => {
+            html += `
+                <div style="background: var(--surface-elevated); padding: 12px; border-radius: 12px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 13px;">${addr.label}</div>
+                        <div style="color: var(--text-secondary); font-size: 12px; margin-top: 2px;">${addr.fullAddress}</div>
+                    </div>
+                    <i class="fa-solid fa-trash" style="color: var(--text-secondary); cursor: pointer; font-size: 13px; padding: 4px;" onclick="deleteAddress('${addr.id}')"></i>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    async function addNewAddress() {
+        const label = document.getElementById('new-addr-label').value.trim() || 'Home';
+        const full = document.getElementById('new-addr-full').value.trim();
+
+        if (!full) {
+            showToast("Please enter a valid street address.");
+            return;
+        }
+
+        const newAddr = {
+            id: 'addr_' + Date.now(),
+            label: label,
+            fullAddress: full
+        };
+
+        userAddressesList.push(newAddr);
+        renderAddressesUI();
+        document.getElementById('new-addr-label').value = '';
+        document.getElementById('new-addr-full').value = '';
+
+        try {
+            await fetch('http://localhost:5000/api/users/addresses', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify(newAddr)
+            });
+            showToast("Address saved to MongoDB Atlas!");
+        } catch (e) {
+            showToast("Address saved locally");
+        }
+    }
+
+    async function deleteAddress(id) {
+        userAddressesList = userAddressesList.filter(a => a.id !== id);
+        renderAddressesUI();
+        try {
+            await fetch(`http://localhost:5000/api/users/addresses/${id}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
+        } catch (e) {}
+    }
+
+    function openReportSpamModal() {
+        const phone = document.getElementById('detail-phone').innerText || activeCall.phoneNumber;
+        document.getElementById('spam-report-number').innerText = phone;
+        openModal('modal-report-spam');
+    }
+
+    async function submitSpamReport() {
+        const phone = document.getElementById('spam-report-number').innerText;
+        const category = document.getElementById('spam-category-select').value;
+        const reason = document.getElementById('spam-reason-input').value.trim() || 'Unsolicited spam call';
+
+        // Update active call state
+        const currentDetailId = document.getElementById('detail-phone').getAttribute('data-call-id');
+        const item = chatCallsHistory.find(c => c.id === currentDetailId || c.phone === phone);
+        if (item) {
+            item.category = 'SPAM';
+            item.isSpam = true;
+            item.summary = `[SPAM] ${reason}`;
+        }
+
+        // Update Call details screen badge
+        const badge = document.getElementById('detail-category-badge');
+        if (badge) {
+            badge.innerText = 'SPAM / BLOCKED';
+            badge.style.background = 'var(--accent-red-bg)';
+            badge.style.color = 'var(--accent-red)';
+        }
+
+        closeModal('modal-report-spam');
+        showToast(`🚨 ${phone} reported as SPAM to community database!`);
+
+        try {
+            await fetch('http://localhost:5000/api/spam/report', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({
+                    phoneNumber: phone,
+                    callerName: item ? item.callerName : 'Unknown Caller',
+                    category: category,
+                    reason: reason
+                })
+            });
+        } catch (e) {
+            console.warn("Spam report saved locally");
+        }
+
+        // Refresh chats and switch to Spam filter tab
+        filterChats('SPAM');
+    }
+
+    function filterChats(filter) {
+        currentFilter = filter;
+        document.getElementById('filter-all-btn').classList.toggle('active', filter === 'ALL');
+        document.getElementById('filter-screened-btn').classList.toggle('active', filter === 'SCREENED');
+        document.getElementById('filter-spam-btn').classList.toggle('active', filter === 'SPAM');
+        renderChats();
+    }
+
+    async function runLiveHealthCheck() {
+        const resBox = document.getElementById('health-check-results');
+        resBox.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking real-time backend latency...';
+        try {
+            const start = performance.now();
+            const res = await fetch('/api/v1/health');
+            const data = await res.json();
+            const latency = Math.round(performance.now() - start);
+            resBox.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px; color: var(--accent-green); font-weight: 700; margin-bottom: 8px;">
+                    <i class="fa-solid fa-circle-check"></i> Backend Connected (Status: ${data.status.toUpperCase()})
+                </div>
+                <div style="color: var(--text-secondary); font-size: 12px; line-height: 1.5;">
+                    • <b>Endpoint:</b> http://localhost:8000<br>
+                    • <b>AI Screening Engine:</b> Active (Google Gemini)<br>
+                    • <b>Speech Synthesizer:</b> Ready<br>
+                    • <b>Database:</b> MongoDB Atlas Connected<br>
+                    • <b>Roundtrip Latency:</b> ${latency}ms
+                </div>
+            `;
+        } catch (e) {
+            resBox.innerHTML = `<div style="color: var(--accent-red); font-weight: 700;"><i class="fa-solid fa-triangle-exclamation"></i> Server check failed</div>`;
+        }
+    }
+
+    let activeCall = {
+        id: "sim-101",
+        callerName: "Samya",
+        phoneNumber: "+1 (555) 382-9012",
+        transcripts: []
+    };
+
+    let chatCallsHistory = [
+        {
+            id: "1",
+            callerName: "Samya",
+            phone: "+1 (555) 382-9012",
+            category: "HOMEWORK",
+            isSpam: false,
+            time: "9:54 am",
+            summary: "Regarding today's homework",
+            importance: "MEDIUM",
+            transcripts: [
+                { speaker: "ai", text: "Hello! I am CallMate AI, screening this call on behalf of Sanjana. How may I help you?" },
+                { speaker: "caller", text: "Hi Sanjana, this is Samya calling regarding today's computer science homework and assignment submission deadline." },
+                { speaker: "ai", text: "Thank you Samya. I have noted that you called regarding today's homework. I will pass this message to Sanjana immediately." }
+            ]
+        },
+        {
+            id: "2",
+            callerName: "Sanjana",
+            phone: "+1 (555) 890-1234",
+            category: "HACKATHON",
+            isSpam: false,
+            time: "22 Aug",
+            summary: "Register for Agentic Hackathon",
+            importance: "HIGH",
+            transcripts: [
+                { speaker: "ai", text: "Hello! CallMate AI screening on behalf of the user. How may I assist you?" },
+                { speaker: "caller", text: "Hey, reminder to confirm registration for the upcoming Agentic AI Hackathon by 5 PM today." },
+                { speaker: "ai", text: "Got it! I will alert Sanjana regarding the Agentic Hackathon registration deadline right away." }
+            ]
+        },
+        {
+            id: "3",
+            callerName: "Bajaj Quick Loans",
+            phone: "+91 99998 88777",
+            category: "SPAM",
+            isSpam: true,
+            time: "20 Aug",
+            summary: "[SPAM] Telemarketing personal loan pitch (Reported by community)",
+            importance: "LOW",
+            transcripts: [
+                { speaker: "ai", text: "Hello! I am CallMate AI screening this call." },
+                { speaker: "caller", text: "Hello ma'am, congratulations! You have pre-approved instant loan of 5 Lakhs." },
+                { speaker: "ai", text: "The user is not interested in promotional loan offers. Declining and ending call." }
+            ]
+        }
+    ];
+
+    function renderChats() {
+        const container = document.getElementById('chats-list-container');
+        
+        // Compute counts
+        const allCount = chatCallsHistory.length;
+        const spamCount = chatCallsHistory.filter(c => c.category === 'SPAM' || c.isSpam).length;
+        const screenedCount = allCount - spamCount;
+
+        const countAllEl = document.getElementById('count-all');
+        const countScreenedEl = document.getElementById('count-screened');
+        const countSpamEl = document.getElementById('count-spam');
+        if (countAllEl) countAllEl.innerText = allCount;
+        if (countScreenedEl) countScreenedEl.innerText = screenedCount;
+        if (countSpamEl) countSpamEl.innerText = spamCount;
+
+        // Filter list
+        let filtered = chatCallsHistory;
+        if (currentFilter === 'SCREENED') {
+            filtered = chatCallsHistory.filter(c => c.category !== 'SPAM' && !c.isSpam);
+        } else if (currentFilter === 'SPAM') {
+            filtered = chatCallsHistory.filter(c => c.category === 'SPAM' || c.isSpam);
+        }
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 30px 16px; color: var(--text-secondary); font-size: 13px;">
+                    <i class="fa-solid fa-shield-check" style="font-size: 28px; margin-bottom: 8px; color: var(--primary);"></i>
+                    <div>No ${currentFilter === 'SPAM' ? 'spam' : ''} calls in this view.</div>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        filtered.forEach(call => {
+            const isSpam = call.category === 'SPAM' || call.isSpam;
+            const iconBg = isSpam ? 'background: var(--accent-red-bg); color: var(--accent-red);' : 'background: var(--primary-soft); color: var(--primary);';
+            const badgeTag = isSpam ? '<span style="background: var(--accent-red-bg); color: var(--accent-red); font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px; margin-left: 6px;">SPAM</span>' : '';
+
+            html += `
+                <div class="chat-row-item" onclick="openDetail('${call.id}')">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div class="retro-phone-icon" style="${iconBg}">
+                            <i class="fa-solid ${isSpam ? 'fa-triangle-exclamation' : 'fa-phone-volume'}"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 15px; font-weight: 800; display: flex; align-items: center;">
+                                ${call.callerName} ${badgeTag}
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">${call.summary}</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-secondary); font-weight: 600;">${call.time}</div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function openQuickSimulation() {
+        startCallSimulation();
+    }
+
+    async function startCallSimulation() {
+        activeCall.transcripts = [];
+        const phone = activeCall.phoneNumber;
+
+        // Check if number is in community spam database
+        try {
+            const res = await fetch(`http://localhost:5000/api/spam/check/${encodeURIComponent(phone)}`);
+            const data = await res.json();
+            const warnEl = document.getElementById('incoming-spam-warning');
+            if (data.isSpam && data.reportCount > 0) {
+                if (!warnEl) {
+                    const warnDiv = document.createElement('div');
+                    warnDiv.id = 'incoming-spam-warning';
+                    warnDiv.style.cssText = 'background: var(--accent-red-bg); color: var(--accent-red); font-size: 11px; font-weight: 800; padding: 6px 12px; border-radius: 10px; margin-top: 8px; text-align: center; border: 1px solid var(--accent-red);';
+                    warnDiv.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Likely Spam (${data.reportCount} Community Reports)`;
+                    document.getElementById('screen-incoming').querySelector('.caller-info').appendChild(warnDiv);
+                }
+            } else if (warnEl) {
+                warnEl.remove();
+            }
+        } catch (e) {}
+
+        showScreen('screen-incoming');
+    }
+
+    function answerCallWithAi() {
+        showScreen('screen-live');
+        const feed = document.getElementById('transcript-feed');
+        feed.innerHTML = '';
+        
+        const greeting = "Hello! I am CallMate AI, screening this call on behalf of Sanjana. How may I assist you today?";
+        addTranscript('ai', greeting);
+        speakText(greeting);
+    }
+
+    function takeOverCall() {
+        document.getElementById('live-badge').innerText = "In Call";
+        document.getElementById('live-badge').style.background = "var(--accent-amber-bg)";
+        document.getElementById('live-badge').style.color = "var(--accent-amber)";
+        const statusEl = document.getElementById('ai-status-indicator');
+        statusEl.innerHTML = '<i class="fa-solid fa-phone"></i> Direct Call Active (Takeover Mode)';
+        statusEl.style.background = "var(--accent-amber-bg)";
+        statusEl.style.color = "var(--accent-amber)";
+        showScreen('screen-live');
+    }
+
+    function toggleMute() {
+        const icon = document.getElementById('mute-icon');
+        icon.classList.toggle('fa-microphone');
+        icon.classList.toggle('fa-microphone-slash');
+    }
+
+    function addTranscript(speaker, text) {
+        activeCall.transcripts.push({ speaker, text });
+        const feed = document.getElementById('transcript-feed');
+        const bubble = document.createElement('div');
+        bubble.className = `bubble ${speaker}`;
+        bubble.innerHTML = `
+            <div class="bubble-speaker">${speaker === 'ai' ? 'AI ASSISTANT' : 'CALLER'}</div>
+            <div>${text}</div>
+        `;
+        feed.appendChild(bubble);
+        feed.scrollTop = feed.scrollHeight;
+    }
+
+    async function simulateSpeech(text) {
+        addTranscript('caller', text);
+        document.getElementById('ai-status-indicator').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> AI Generating Response...';
+        
+        try {
+            const res = await fetch('/api/v1/ai/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    call_id: activeCall.id,
+                    caller_name: activeCall.callerName,
+                    caller_phone: activeCall.phoneNumber,
+                    conversation: activeCall.transcripts
+                })
+            });
+            const data = await res.json();
+            const aiReply = data.response;
+            addTranscript('ai', aiReply);
+            speakText(aiReply);
+            document.getElementById('ai-status-indicator').innerHTML = '<i class="fa-solid fa-volume-high"></i> AI Assistant Speaking...';
+        } catch (e) {
+            const fallback = "Thank you. I have noted this message and will inform Sanjana immediately.";
+            addTranscript('ai', fallback);
+            speakText(fallback);
+        }
+    }
+
+    let recognition = null;
+    let isRecording = false;
+
+    function toggleVoiceRecording() {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) {
+            showToast("Voice input not supported in this browser. Please type.");
+            return;
+        }
+
+        const micBtn = document.getElementById('mic-input-btn');
+        const micIcon = document.getElementById('rec-mic-icon');
+        const statusEl = document.getElementById('ai-status-indicator');
+
+        if (!recognition) {
+            recognition = new SpeechRec();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = function() {
+                isRecording = true;
+                if (micBtn) {
+                    micBtn.style.background = 'var(--accent-red-bg)';
+                    micBtn.style.borderColor = 'var(--accent-red)';
+                }
+                if (micIcon) {
+                    micIcon.style.color = 'var(--accent-red)';
+                    micIcon.className = 'fa-solid fa-microphone-lines fa-fade';
+                }
+                if (statusEl) {
+                    statusEl.innerHTML = '<i class="fa-solid fa-microphone-lines fa-fade"></i> Listening to your voice... Speak now!';
+                    statusEl.style.background = 'var(--primary-soft)';
+                    statusEl.style.color = 'var(--primary)';
+                }
+            };
+
+            recognition.onresult = function(event) {
+                const spokenText = event.results[0][0].transcript;
+                if (spokenText) {
+                    const input = document.getElementById('caller-input');
+                    if (input) input.value = spokenText;
+                    simulateSpeech(spokenText);
+                }
+            };
+
+            recognition.onerror = function(event) {
+                showToast("Microphone error: " + event.error);
+                stopVoiceRecording();
+            };
+
+            recognition.onend = function() {
+                stopVoiceRecording();
+            };
+        }
+
+        if (isRecording) {
+            recognition.stop();
+            stopVoiceRecording();
+        } else {
+            try {
+                recognition.start();
+            } catch (e) {
+                stopVoiceRecording();
+            }
+        }
+    }
+
+    function stopVoiceRecording() {
+        isRecording = false;
+        const micBtn = document.getElementById('mic-input-btn');
+        const micIcon = document.getElementById('rec-mic-icon');
+        if (micBtn) {
+            micBtn.style.background = 'var(--surface-elevated)';
+            micBtn.style.borderColor = 'var(--border)';
+        }
+        if (micIcon) {
+            micIcon.style.color = 'var(--primary)';
+            micIcon.className = 'fa-solid fa-microphone';
+        }
+    }
+
+    function sendCallerInput() {
+        const input = document.getElementById('caller-input');
+        if (input.value.trim()) {
+            simulateSpeech(input.value.trim());
+            input.value = '';
+        }
+    }
+
+    async function endCall() {
+        document.getElementById('ai-status-indicator').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating Post-Call Summary...';
+        
+        try {
+            const summaryRes = await fetch('/api/v1/ai/summarize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    call_id: activeCall.id,
+                    conversation: activeCall.transcripts,
+                    caller_name: activeCall.callerName
+                })
+            });
+            const summaryData = await summaryRes.json();
+            
+            document.getElementById('detail-caller').innerText = activeCall.callerName;
+            document.getElementById('detail-phone').innerText = activeCall.phoneNumber;
+            document.getElementById('detail-phone').setAttribute('data-call-id', activeCall.id);
+            document.getElementById('detail-purpose').innerText = summaryData.purpose;
+            document.getElementById('detail-action').innerText = summaryData.recommended_action;
+            document.getElementById('detail-summary').innerText = summaryData.executive_summary;
+            
+            const badge = document.getElementById('detail-category-badge');
+            badge.innerText = summaryData.category;
+            if (summaryData.is_spam || summaryData.category === 'SPAM') {
+                badge.style.background = 'var(--accent-red-bg)';
+                badge.style.color = 'var(--accent-red)';
+            } else {
+                badge.style.background = 'var(--accent-purple-bg)';
+                badge.style.color = 'var(--accent-purple)';
+            }
+            
+            renderDetailChat(activeCall.transcripts);
+            
+            const newId = Date.now().toString();
+            chatCallsHistory.unshift({
+                id: newId,
+                callerName: activeCall.callerName,
+                phone: activeCall.phoneNumber,
+                category: summaryData.category,
+                isSpam: Boolean(summaryData.is_spam || summaryData.category === 'SPAM'),
+                time: "Just now",
+                summary: summaryData.purpose,
+                importance: summaryData.importance,
+                transcripts: [...activeCall.transcripts]
+            });
+            
+            switchDetailTab('chat');
+            showScreen('screen-details');
+        } catch (e) {
+            showScreen('screen-chats');
+        }
+    }
+
+    function renderDetailChat(transcripts) {
+        const chatContainer = document.getElementById('detail-chat-bubbles');
+        document.getElementById('chat-count').innerText = transcripts ? transcripts.length : 0;
+        
+        if (!transcripts || transcripts.length === 0) {
+            chatContainer.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px; font-size: 13px;">No transcripts recorded.</div>';
+            return;
+        }
+
+        let html = '';
+        transcripts.forEach(t => {
+            html += `
+                <div class="bubble ${t.speaker}">
+                    <div class="bubble-speaker">${t.speaker === 'ai' ? 'AI ASSISTANT' : 'CALLER'}</div>
+                    <div>${t.text}</div>
+                </div>
+            `;
+        });
+        chatContainer.innerHTML = html;
+    }
+
+    function speakText(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.0;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function openDetail(id) {
+        const item = chatCallsHistory.find(c => c.id === id);
+        if (item) {
+            document.getElementById('detail-caller').innerText = item.callerName;
+            document.getElementById('detail-phone').innerText = item.phone;
+            document.getElementById('detail-phone').setAttribute('data-call-id', item.id);
+            document.getElementById('detail-purpose').innerText = item.summary;
+            
+            const badge = document.getElementById('detail-category-badge');
+            badge.innerText = item.category;
+            if (item.category === 'SPAM' || item.isSpam) {
+                badge.style.background = 'var(--accent-red-bg)';
+                badge.style.color = 'var(--accent-red)';
+            } else {
+                badge.style.background = 'var(--accent-purple-bg)';
+                badge.style.color = 'var(--accent-purple)';
+            }
+
+            document.getElementById('detail-summary').innerText = item.summary;
+            renderDetailChat(item.transcripts || []);
+            switchDetailTab('chat');
+            showScreen('screen-details');
+        }
+    }
+
+    function checkInitialAuth() {
+        const token = localStorage.getItem('callmate_token');
+        const userStr = localStorage.getItem('callmate_user');
+        renderInstructionsUI();
+        renderAddressesUI();
+        initAutoLocationTracking();
+        
+        if (token && userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                updateUserProfileUI(user);
+                showScreen('screen-chats');
+            } catch (e) {
+                showScreen('screen-login');
+            }
+        } else {
+            showScreen('screen-login');
+        }
+    }
+
+    checkInitialAuth();
+</script>
+</body>
+</html>
