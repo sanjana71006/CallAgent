@@ -543,14 +543,22 @@ fun SettingsScreen(
                 }
             }
 
-            // 5. Invite a Friend Card (Functional Android Share Intent)
+            // 5. Invite a Friend Card (Functional Android Share Intent & Clipboard Copy)
             item {
                 val shareAction = {
-                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, "Try CallMate AI — your personal AI call assistant.")
+                    try {
+                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                        val clip = android.content.ClipData.newPlainText("CallMate AI Invite", "https://github.com/sanjana71006/CallAgent")
+                        clipboard?.setPrimaryClip(clip)
+
+                        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, "Try CallMate AI — your privacy-first AI phone call assistant! Download APK & source: https://github.com/sanjana71006/CallAgent")
+                        }
+                        context.startActivity(Intent.createChooser(sendIntent, "Invite a Friend to CallMate AI"))
+                    } catch (e: Exception) {
+                        // Fallback
                     }
-                    context.startActivity(Intent.createChooser(sendIntent, "Invite a Friend"))
                 }
 
                 Surface(
@@ -594,7 +602,7 @@ fun SettingsScreen(
                             Icon(
                                 imageVector = Icons.Default.Share,
                                 contentDescription = "Share",
-                                tint = AccentGreenLight,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
