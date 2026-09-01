@@ -19,43 +19,55 @@ class GeminiProvider(AiProvider):
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
         self.api_key = api_key or settings.GEMINI_API_KEY
         self.model = model or settings.GEMINI_MODEL
-        self.timeout = httpx.Timeout(3.5, connect=1.5)
+        self.timeout = httpx.Timeout(6.0, connect=2.5)
 
     async def _generate(self, prompt: str, system: Optional[str] = None) -> str:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={self.api_key}"
+        candidate_models = [self.model, "gemini-flash-lite-latest", "gemini-flash-latest"]
+        # Deduplicate while preserving order
+        unique_models = []
+        for m in candidate_models:
+            if m and m not in unique_models:
+                unique_models.append(m)
         
-        payload: Dict[str, Any] = {
-            "contents": [
-                {
-                    "parts": [{"text": prompt}]
+        last_error = None
+        for m in unique_models:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={self.api_key}"
+            
+            payload: Dict[str, Any] = {
+                "contents": [
+                    {
+                        "parts": [{"text": prompt}]
+                    }
+                ],
+                "generationConfig": {
+                    "temperature": 0.4,
+                    "topP": 0.9,
+                    "maxOutputTokens": 1024
                 }
-            ],
-            "generationConfig": {
-                "temperature": 0.3,
-                "topP": 0.9,
-                "maxOutputTokens": 1024
-            }
-        }
-        
-        if system:
-            payload["system_instruction"] = {
-                "parts": [{"text": system}]
             }
             
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.post(url, json=payload)
-            response.raise_for_status()
-            data = response.json()
-            
-            candidates = data.get("candidates", [])
-            if not candidates:
-                raise ValueError("Gemini API returned no candidates.")
-            
-            parts = candidates[0].get("content", {}).get("parts", [])
-            if not parts:
-                raise ValueError("Gemini API candidate has no content parts.")
+            if system:
+                payload["system_instruction"] = {
+                    "parts": [{"text": system}]
+                }
                 
-            return parts[0].get("text", "").strip()
+            try:
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    response = await client.post(url, json=payload)
+                    if response.status_code == 200:
+                        data = response.json()
+                        candidates = data.get("candidates", [])
+                        if candidates:
+                            parts = candidates[0].get("content", {}).get("parts", [])
+                            if parts:
+                                return parts[0].get("text", "").strip()
+                    else:
+                        last_error = f"HTTP {response.status_code}: {response.text[:120]}"
+            except Exception as e:
+                last_error = str(e)
+                continue
+                
+        raise ValueError(f"Gemini API generation failed across models: {last_error}")
 
     def _extract_json(self, raw_text: str) -> Dict[str, Any]:
         """Extract and parse JSON safely from model output, handling markdown code blocks."""
