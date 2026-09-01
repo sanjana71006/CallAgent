@@ -27,6 +27,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.callmate.ai.core.network.ApiClient
 import com.callmate.ai.core.theme.AccentGreenLight
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,9 +40,53 @@ fun LoginScreen(
     val uiState by viewModel.uiState.collectAsState()
     val focusManager = LocalFocusManager.current
 
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("sanjana@callmate.ai") }
+    var password by remember { mutableStateOf("password123") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var showServerDialog by remember { mutableStateOf(false) }
+    var customHostInput by remember { mutableStateOf(ApiClient.serverHost) }
+
+    if (showServerDialog) {
+        AlertDialog(
+            onDismissRequest = { showServerDialog = false },
+            title = { Text("CallMate Server Connection", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text(
+                        "Set the IP address of your host machine running the CallMate AI backend:",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = customHostInput,
+                        onValueChange = { customHostInput = it },
+                        label = { Text("Server IP / Host") },
+                        placeholder = { Text("192.168.31.86") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (customHostInput.isNotBlank()) {
+                            ApiClient.serverHost = customHostInput
+                        }
+                        showServerDialog = false
+                    }
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showServerDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
@@ -55,19 +100,58 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Spacer(modifier = Modifier.height(32.dp))
+            // Server Host Chip at top right
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Surface(
+                    onClick = { showServerDialog = true },
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(MaterialTheme.colorScheme.primary, shape = CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = ApiClient.serverHost,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Branding Icon
             Box(
                 modifier = Modifier
                     .size(76.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, shape = CircleShape),
+                    .background(
+                        brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                            colors = listOf(
+                                com.callmate.ai.core.theme.PrimaryBlueLight,
+                                com.callmate.ai.core.theme.PrimaryBlueDark
+                            )
+                        ),
+                        shape = RoundedCornerShape(22.dp)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.SmartToy,
+                    imageVector = Icons.Default.Shield,
                     contentDescription = "CallMate AI",
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = Color.White,
                     modifier = Modifier.size(42.dp)
                 )
             }

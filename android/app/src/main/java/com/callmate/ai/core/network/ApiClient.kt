@@ -1,5 +1,6 @@
 package com.callmate.ai.core.network
 
+import android.os.Build
 import com.callmate.ai.data.remote.AuthApiService
 import com.callmate.ai.data.remote.CallMateApiService
 import okhttp3.OkHttpClient
@@ -9,11 +10,38 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    private var currentAiBaseUrl = "http://10.0.2.2:8000/"
-    private var currentAuthBaseUrl = "http://10.0.2.2:5000/"
+    // Detect if running on Android Emulator vs Real Physical Device
+    val isEmulator: Boolean by lazy {
+        Build.FINGERPRINT.startsWith("generic") ||
+        Build.FINGERPRINT.startsWith("unknown") ||
+        Build.MODEL.contains("google_sdk") ||
+        Build.MODEL.contains("Emulator") ||
+        Build.MODEL.contains("Android SDK built for x86") ||
+        Build.HARDWARE.contains("goldfish") ||
+        Build.HARDWARE.contains("ranchu") ||
+        Build.PRODUCT.contains("sdk_gphone") ||
+        Build.PRODUCT.contains("sdk_google")
+    }
+
+    // Default: 10.0.2.2 on Emulator, 192.168.31.86 on Physical Device
+    var serverHost: String = if (isEmulator) "10.0.2.2" else "192.168.31.86"
+        set(value) {
+            field = value.trim().removePrefix("http://").removePrefix("https://").removeSuffix("/")
+            updateBaseUrls()
+        }
+
+    private var currentAiBaseUrl = "http://$serverHost:8000/"
+    private var currentAuthBaseUrl = "http://$serverHost:5000/"
     
     private var apiService: CallMateApiService? = null
     private var authService: AuthApiService? = null
+
+    private fun updateBaseUrls() {
+        currentAiBaseUrl = "http://$serverHost:8000/"
+        currentAuthBaseUrl = "http://$serverHost:5000/"
+        apiService = null
+        authService = null
+    }
 
     private val okHttpClient by lazy {
         val logging = HttpLoggingInterceptor().apply {
@@ -21,9 +49,9 @@ object ApiClient {
         }
         OkHttpClient.Builder()
             .addInterceptor(logging)
-            .connectTimeout(10, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(15, TimeUnit.SECONDS)
+            .connectTimeout(6, TimeUnit.SECONDS)
+            .readTimeout(20, TimeUnit.SECONDS)
+            .writeTimeout(10, TimeUnit.SECONDS)
             .build()
     }
 
