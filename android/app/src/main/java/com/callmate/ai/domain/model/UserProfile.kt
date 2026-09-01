@@ -1,9 +1,9 @@
 package com.callmate.ai.domain.model
 
 data class UserProfile(
-    val name: String = "Sanjana",
-    val phoneNumber: String = "9440886543",
-    val gender: String = "Female",
+    val name: String = "User",
+    val phoneNumber: String = "",
+    val gender: String = "Prefer not to say",
     val avatarId: String = "avatar_1"
 )
 

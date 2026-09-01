@@ -54,11 +54,11 @@ class CallMateApp : Application() {
 
         database = CallMateDatabase.getDatabase(this)
         tokenManager = TokenManager(this)
-        authRepository = AuthRepositoryImpl(tokenManager, database.userProfileDao())
+        settingsRepository = SettingsRepositoryImpl(this)
+        authRepository = AuthRepositoryImpl(tokenManager, database.userProfileDao(), settingsRepository)
 
         callRepository = CallRepositoryImpl(database.callDao(), database.transcriptDao())
         addressRepository = AddressRepositoryImpl(database.addressDao())
-        settingsRepository = SettingsRepositoryImpl(this)
         callProvider = SimulatorCallProvider()
         contactsManager = com.callmate.ai.core.contacts.ContactsManager(this)
 

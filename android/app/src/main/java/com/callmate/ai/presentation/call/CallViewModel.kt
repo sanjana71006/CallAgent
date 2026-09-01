@@ -151,31 +151,123 @@ class CallViewModel(
                     personality = effectivePersonality
                 )
 
-                val response = apiService.chat(requestDto)
-                if (response.isSuccessful && response.body() != null) {
-                    val aiReply = response.body()!!.response
-                    addTranscriptMessage(speaker = "ai", message = aiReply)
-                    
-                    _uiState.update { it.copy(aiVoiceState = AiVoiceState.SPEAKING) }
-                    ttsManager.speak(aiReply, pitch = activeSettings.speechPitch, rate = activeSettings.speechRate)
+                val response = try {
+                    apiService.chat(requestDto)
+                } catch (e: Exception) {
+                    null
+                }
 
-                    if (response.body()!!.isCallComplete) {
-                        delay(2500)
-                        endCall()
-                    }
+                val (aiReply, isComplete) = if (response != null && response.isSuccessful && response.body() != null) {
+                    val body = response.body()!!
+                    Pair(body.response, body.isCallComplete)
                 } else {
-                    fallbackAiResponse("Thank you for the message. I will ensure the user receives this update promptly.")
+                    generateContextualAiResponse(
+                        speech = callerText,
+                        history = _uiState.value.transcripts,
+                        assistantName = activeSettings.assistantName,
+                        instructions = customInstructions
+                    )
+                }
+
+                addTranscriptMessage(speaker = "ai", message = aiReply)
+                _uiState.update { it.copy(aiVoiceState = AiVoiceState.SPEAKING) }
+                ttsManager.speak(aiReply, pitch = activeSettings.speechPitch, rate = activeSettings.speechRate)
+
+                if (isComplete) {
+                    delay(2500)
+                    endCall()
                 }
             } catch (e: Exception) {
-                fallbackAiResponse("Thank you. I have recorded your message and will notify the user immediately.")
+                val (fallbackReply, isDone) = generateContextualAiResponse(
+                    speech = callerText,
+                    history = _uiState.value.transcripts,
+                    assistantName = activeSettings.assistantName,
+                    instructions = customInstructions
+                )
+                addTranscriptMessage(speaker = "ai", message = fallbackReply)
+                _uiState.update { it.copy(aiVoiceState = AiVoiceState.SPEAKING) }
+                ttsManager.speak(fallbackReply, pitch = activeSettings.speechPitch, rate = activeSettings.speechRate)
+                if (isDone) {
+                    delay(2500)
+                    endCall()
+                }
             }
         }
     }
 
-    private fun fallbackAiResponse(reply: String) {
-        addTranscriptMessage(speaker = "ai", message = reply)
-        _uiState.update { it.copy(aiVoiceState = AiVoiceState.SPEAKING) }
-        ttsManager.speak(reply, pitch = activeSettings.speechPitch, rate = activeSettings.speechRate)
+    private fun generateContextualAiResponse(
+        speech: String,
+        history: List<TranscriptMessage>,
+        assistantName: String,
+        instructions: String
+    ): Pair<String, Boolean> {
+        val lower = speech.lowercase().trim()
+        val callerTurnsCount = history.count { it.speaker == "caller" }
+
+        // 1. Delivery & Couriers
+        if (lower.contains("otp") || lower.contains("pin") || lower.contains("code") || lower.contains("verification")) {
+            return Pair("For security, OTPs cannot be shared over a phone call. Please leave the package at the doorstep or with building security.", false)
+        }
+        if (lower.contains("delivery") || lower.contains("courier") || lower.contains("package") ||
+            lower.contains("parcel") || lower.contains("amazon") || lower.contains("swiggy") ||
+            lower.contains("zomato") || lower.contains("blinkit") || lower.contains("gate") || lower.contains("door")) {
+            if (lower.contains("outside") || lower.contains("arrived") || lower.contains("here") || lower.contains("reach")) {
+                return Pair("Thank you! Please leave the parcel at the doorstep or security gate. I have notified the user.", true)
+            }
+            return Pair("Thank you for the delivery update! Please leave the package at the door. Do you need any directions?", false)
+        }
+
+        // 2. Job / Interview / Recruiter
+        if (lower.contains("interview") || lower.contains("recruiter") || lower.contains("hiring") ||
+            lower.contains("job") || lower.contains("resume") || lower.contains("position") || lower.contains("hr")) {
+            if (callerTurnsCount <= 1) {
+                return Pair("Thank you for reaching out regarding this opportunity. Which company and role is this for, and what is your preferred callback time?", false)
+            } else {
+                return Pair("Got it, I have recorded the interview notes and scheduled details for the user. Have a great day!", true)
+            }
+        }
+
+        // 3. Telemarketing / Sales / Loans / Cards / Promotions
+        if (lower.contains("loan") || lower.contains("credit card") || lower.contains("insurance") ||
+            lower.contains("investment") || lower.contains("offer") || lower.contains("promotion") ||
+            lower.contains("crypto") || lower.contains("free gift")) {
+            return Pair("Thank you for calling, but the user is not interested in marketing or commercial offers. Please remove this number from your list. Goodbye.", true)
+        }
+
+        // 4. Urgent / Emergency
+        if (lower.contains("urgent") || lower.contains("emergency") || lower.contains("hospital") ||
+            lower.contains("accident") || lower.contains("doctor") || lower.contains("asap")) {
+            return Pair("Understood, I am marking this call as urgent and alerting the user immediately.", true)
+        }
+
+        // 5. Work / Project / Meetings
+        if (lower.contains("meeting") || lower.contains("project") || lower.contains("client") ||
+            lower.contains("deadline") || lower.contains("report") || lower.contains("office")) {
+            return Pair("Thank you for the update. Could you please leave a brief message regarding the agenda so I can pass it along?", false)
+        }
+
+        // 6. Identity / AI Bot inquiries
+        if (lower.contains("who are you") || lower.contains("is this ai") || lower.contains("are you a bot") || lower.contains("robot") || lower.contains("human")) {
+            return Pair("I am $assistantName, an AI call assistant screening this call on behalf of the user. How may I assist you?", false)
+        }
+
+        // 7. Greeting / Speaking request
+        if (lower.contains("hello") || lower.contains("hi") || lower.contains("hey") || lower.contains("can i speak") || lower.contains("is this")) {
+            return Pair("Hello! The user is currently unavailable. May I ask what this call is regarding so I can relay your message?", false)
+        }
+
+        // 8. Ending Call / Bye
+        if (lower.contains("bye") || lower.contains("goodbye") || lower.contains("thank you") ||
+            lower.contains("thanks") || lower.contains("that's all") || lower.contains("nothing else")) {
+            return Pair("Thank you for calling. I have saved our conversation and notified the user. Have a wonderful day!", true)
+        }
+
+        // 9. Multi-turn conversational fallback
+        return when (callerTurnsCount) {
+            1 -> Pair("Thank you for providing that. May I take down your name and callback number?", false)
+            2 -> Pair("Understood, I have recorded your message. Is there any specific time you'd prefer a callback?", false)
+            else -> Pair("Thank you, I have logged all the details from this call and will update the user right away. Goodbye!", true)
+        }
     }
 
     fun takeOverCall() {

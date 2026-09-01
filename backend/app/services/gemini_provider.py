@@ -19,7 +19,7 @@ class GeminiProvider(AiProvider):
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
         self.api_key = api_key or settings.GEMINI_API_KEY
         self.model = model or settings.GEMINI_MODEL
-        self.timeout = httpx.Timeout(40.0, connect=8.0)
+        self.timeout = httpx.Timeout(3.5, connect=1.5)
 
     async def _generate(self, prompt: str, system: Optional[str] = None) -> str:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={self.api_key}"

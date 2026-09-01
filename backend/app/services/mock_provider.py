@@ -15,57 +15,109 @@ class MockAiProvider(AiProvider):
         turns = request.conversation
         if not turns:
             return ChatResponse(
-                response=f"Hello, this is {request.assistant_name}. How may I help you today?",
+                response=f"Hello, this is {request.assistant_name}, screening this call on behalf of the user. How may I help you today?",
                 suggested_action="Listen to caller"
             )
         
         last_turn = turns[-1]
-        text_lower = last_turn.text.lower()
+        text_lower = last_turn.text.lower().strip()
+        caller_turns_count = len([t for t in turns if t.speaker == "caller"])
         
-        # Heuristics based on typical screening dialogues
-        if any(w in text_lower for w in ["interview", "resume", "hr", "hiring", "job", "recruiter", "position"]):
+        # 1. Couriers & Deliveries
+        if any(w in text_lower for w in ["otp", "pin", "verification code"]):
             return ChatResponse(
-                response="Thank you for calling. Could you please specify the role, company name, and the best callback time?",
-                suggested_action="Awaiting interview details"
+                response="For security, OTPs cannot be provided over a phone call. Please leave the package at the doorstep or with building security.",
+                suggested_action="OTP security guardrail activated"
             )
-        elif any(w in text_lower for w in ["delivery", "package", "parcel", "courier", "door", "address", "otp"]):
-            if "otp" in text_lower:
+        elif any(w in text_lower for w in ["delivery", "package", "parcel", "courier", "amazon", "swiggy", "zomato", "blinkit", "gate", "door"]):
+            if any(w in text_lower for w in ["outside", "arrived", "here", "reach", "flat", "door"]):
                 return ChatResponse(
-                    response="For security, I cannot share OTPs over the phone. Please leave the package at the doorstep or with security.",
-                    suggested_action="OTP security guardrail activated"
+                    response="Thank you for the delivery! Please leave the package right at the doorstep or security desk. I have alerted the user.",
+                    suggested_action="Drop-off instruction delivered",
+                    is_call_complete=True
                 )
             return ChatResponse(
-                response="Thank you. Please leave the package at the doorstep or security gate. I will notify the owner.",
-                suggested_action="Package drop-off acknowledged"
+                response="Thank you for delivering! Please leave the package at the doorstep or with security. Do you need any specific directions?",
+                suggested_action="Awaiting delivery confirmation"
             )
-        elif any(w in text_lower for w in ["urgent", "emergency", "hospital", "doctor", "accident", "asap"]):
+
+        # 2. Interviews & Recruitment
+        elif any(w in text_lower for w in ["interview", "resume", "hr", "hiring", "job", "recruiter", "position", "candidate"]):
+            if caller_turns_count <= 1:
+                return ChatResponse(
+                    response="Thank you for reaching out regarding this opportunity. Which company and role is this for, and what is the preferred callback time?",
+                    suggested_action="Awaiting interview details"
+                )
+            else:
+                return ChatResponse(
+                    response="Got it! I have recorded your company notes and interview callback schedule for the candidate. Have a wonderful day!",
+                    suggested_action="Interview details logged",
+                    is_call_complete=True
+                )
+
+        # 3. Urgency & Emergencies
+        elif any(w in text_lower for w in ["urgent", "emergency", "hospital", "doctor", "accident", "police", "asap"]):
             return ChatResponse(
-                response="Understood. I am flagging this call as urgent and alerting the user immediately.",
+                response="Understood, I am marking this call as high priority and alerting the user immediately.",
                 suggested_action="Escalate to user immediately",
                 is_call_complete=True
             )
-        elif any(w in text_lower for w in ["loan", "credit card", "investment", "insurance", "crypto", "free gift", "winner"]):
+
+        # 4. Telemarketing, Sales, & Scams
+        elif any(w in text_lower for w in ["loan", "credit card", "investment", "insurance", "crypto", "free gift", "winner", "cash prize"]):
             return ChatResponse(
-                response="Thank you, but the user is not interested in marketing or unsolicited promotional offers. Have a good day.",
+                response="Thank you for calling, but the user is not interested in marketing or commercial offers. Please remove this number from your list. Goodbye.",
                 suggested_action="Spam/Sales screening",
                 is_call_complete=True
             )
-        elif any(w in text_lower for w in ["who are you", "is this an ai", "are you a bot", "robot"]):
+
+        # 5. Work & Projects
+        elif any(w in text_lower for w in ["meeting", "project", "deadline", "client", "office", "report"]):
             return ChatResponse(
-                response=f"Yes, I am {request.assistant_name}, an AI assistant screening this call. How can I assist you?",
+                response="Thank you for the update. Could you please leave a brief message regarding the agenda so I can pass it along promptly?",
+                suggested_action="Work inquiry logged"
+            )
+
+        # 6. Identity & AI Assistant queries
+        elif any(w in text_lower for w in ["who are you", "is this an ai", "are you a bot", "robot", "human"]):
+            return ChatResponse(
+                response=f"I am {request.assistant_name}, an AI assistant screening this call on behalf of the user. How may I assist you?",
                 suggested_action="AI disclosure"
             )
-        elif any(w in text_lower for w in ["bye", "thank you", "goodbye", "that's all", "talk later"]):
+
+        # 7. Greetings
+        elif any(w in text_lower for w in ["hello", "hi", "hey", "can i speak", "is this"]):
             return ChatResponse(
-                response="Thank you for calling. I will pass your message along. Have a great day!",
+                response="Hello! The user is currently unavailable. May I ask what this call is regarding so I can relay your message?",
+                suggested_action="Identify caller purpose"
+            )
+
+        # 8. Farewells
+        elif any(w in text_lower for w in ["bye", "thank you", "goodbye", "that's all", "talk later", "nothing else"]):
+            return ChatResponse(
+                response="Thank you for calling. I have saved our conversation and notified the user. Have a great day!",
                 suggested_action="End call",
                 is_call_complete=True
             )
+
+        # 9. Conversational Flow
         else:
-            return ChatResponse(
-                response="Thank you for providing that. May I take a brief message or have your contact details for a callback?",
-                suggested_action="Take message"
-            )
+            if caller_turns_count == 1:
+                return ChatResponse(
+                    response="Thank you for providing that. May I take down your name and callback number?",
+                    suggested_action="Awaiting contact info"
+                )
+            elif caller_turns_count == 2:
+                return ChatResponse(
+                    response="Understood, I have recorded your message. Is there any specific time you would prefer a callback?",
+                    suggested_action="Awaiting callback time"
+                )
+            else:
+                return ChatResponse(
+                    response="Thank you, I have logged all the details from this call and will update the user right away. Goodbye!",
+                    suggested_action="End call",
+                    is_call_complete=True
+                )
             
     async def classify(self, request: ClassifyRequest) -> ClassifyResponse:
         full_text = " ".join([turn.text.lower() for turn in request.conversation])

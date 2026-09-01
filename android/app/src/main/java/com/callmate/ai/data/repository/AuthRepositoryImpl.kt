@@ -8,14 +8,17 @@ import com.callmate.ai.data.remote.dto.LoginRequestDto
 import com.callmate.ai.data.remote.dto.RegisterRequestDto
 import com.callmate.ai.data.remote.dto.UpdateUserRequestDto
 import com.callmate.ai.data.remote.dto.UserDto
+import com.callmate.ai.domain.model.UserProfile
 import com.callmate.ai.domain.repository.AuthRepository
+import com.callmate.ai.domain.repository.SettingsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
 class AuthRepositoryImpl(
     private val tokenManager: TokenManager,
-    private val userProfileDao: UserProfileDao
+    private val userProfileDao: UserProfileDao,
+    private val settingsRepository: SettingsRepository
 ) : AuthRepository {
 
     override val isLoggedIn: Flow<Boolean> = tokenManager.isLoggedInFlow
@@ -43,19 +46,27 @@ class AuthRepositoryImpl(
             if (response.isSuccessful && response.body()?.success == true) {
                 val body = response.body()!!
                 val token = body.token ?: ""
-                val user = body.user ?: UserDto(userId = "usr_local", name = name, email = email)
+                val user = body.user ?: UserDto(userId = "usr_local", name = name, email = email, phoneNumber = phoneNumber)
                 
                 // Save session in TokenManager
                 tokenManager.saveSession(token, user.userId, user.email, user.name)
 
-                // Initialize local Room UserProfile
+                // Initialize local Room UserProfile & DataStore
                 userProfileDao.insertOrUpdate(
                     UserProfileEntity(
                         id = "default_user_profile",
                         name = user.name,
                         email = user.email,
-                        phoneNumber = user.phoneNumber ?: "+1 (555) 019-2834",
+                        phoneNumber = user.phoneNumber ?: phoneNumber ?: "",
                         isCloudSynced = true
+                    )
+                )
+                settingsRepository.updateUserProfile(
+                    UserProfile(
+                        name = user.name,
+                        phoneNumber = user.phoneNumber ?: phoneNumber ?: "",
+                        gender = "Prefer not to say",
+                        avatarId = "avatar_1"
                     )
                 )
                 Result.success(user)
@@ -68,9 +79,9 @@ class AuthRepositoryImpl(
             if (name.isNotBlank() && email.isNotBlank()) {
                 val localUser = UserDto(
                     userId = "usr_local_registered",
-                    name = name,
-                    email = email,
-                    phoneNumber = phoneNumber ?: "+91 94408 86543"
+                    name = name.trim(),
+                    email = email.trim(),
+                    phoneNumber = phoneNumber?.trim() ?: ""
                 )
                 tokenManager.saveSession("token_local_verified_session", localUser.userId, localUser.email, localUser.name)
                 userProfileDao.insertOrUpdate(
@@ -78,8 +89,16 @@ class AuthRepositoryImpl(
                         id = "default_user_profile",
                         name = localUser.name,
                         email = localUser.email,
-                        phoneNumber = localUser.phoneNumber ?: "+91 94408 86543",
+                        phoneNumber = localUser.phoneNumber ?: "",
                         isCloudSynced = false
+                    )
+                )
+                settingsRepository.updateUserProfile(
+                    UserProfile(
+                        name = localUser.name,
+                        phoneNumber = localUser.phoneNumber ?: "",
+                        gender = "Prefer not to say",
+                        avatarId = "avatar_1"
                     )
                 )
                 Result.success(localUser)
@@ -102,17 +121,25 @@ class AuthRepositoryImpl(
                 // Save session in TokenManager
                 tokenManager.saveSession(token, user.userId, user.email, user.name)
 
-                // Sync with local Room UserProfile
+                // Sync with local Room UserProfile & DataStore
                 val existing = userProfileDao.getUserProfileSync()
                 userProfileDao.insertOrUpdate(
                     UserProfileEntity(
                         id = "default_user_profile",
                         name = user.name,
                         email = user.email,
-                        phoneNumber = user.phoneNumber?.ifBlank { null } ?: existing?.phoneNumber ?: "+91 94408 86543",
-                        gender = existing?.gender ?: "Female",
+                        phoneNumber = user.phoneNumber?.ifBlank { null } ?: existing?.phoneNumber ?: "",
+                        gender = existing?.gender ?: "Prefer not to say",
                         avatarUri = existing?.avatarUri ?: "avatar_1",
                         isCloudSynced = true
+                    )
+                )
+                settingsRepository.updateUserProfile(
+                    UserProfile(
+                        name = user.name,
+                        phoneNumber = user.phoneNumber?.ifBlank { null } ?: existing?.phoneNumber ?: "",
+                        gender = existing?.gender ?: "Prefer not to say",
+                        avatarId = existing?.avatarUri ?: "avatar_1"
                     )
                 )
                 Result.success(user)
@@ -127,24 +154,34 @@ class AuthRepositoryImpl(
                     .joinToString(" ") { it.replaceFirstChar { char -> char.uppercase() } }
                 val localUser = UserDto(
                     userId = "usr_local_session",
-                    name = if (displayName.isNotBlank()) displayName else "Sanjana",
-                    email = email,
-                    phoneNumber = "+91 94408 86543"
+                    name = if (displayName.isNotBlank()) displayName else "User",
+                    email = email.trim(),
+                    phoneNumber = ""
                 )
                 tokenManager.saveSession("token_local_verified_session", localUser.userId, localUser.email, localUser.name)
                 val existing = userProfileDao.getUserProfileSync()
+                val finalName = if (existing != null && existing.name.isNotBlank() && existing.name != "Sanjana") existing.name else localUser.name
+                val finalPhone = existing?.phoneNumber ?: ""
                 userProfileDao.insertOrUpdate(
                     UserProfileEntity(
                         id = "default_user_profile",
-                        name = localUser.name,
+                        name = finalName,
                         email = localUser.email,
-                        phoneNumber = existing?.phoneNumber ?: "+91 94408 86543",
-                        gender = existing?.gender ?: "Female",
+                        phoneNumber = finalPhone,
+                        gender = existing?.gender ?: "Prefer not to say",
                         avatarUri = existing?.avatarUri ?: "avatar_1",
                         isCloudSynced = false
                     )
                 )
-                Result.success(localUser)
+                settingsRepository.updateUserProfile(
+                    UserProfile(
+                        name = finalName,
+                        phoneNumber = finalPhone,
+                        gender = existing?.gender ?: "Prefer not to say",
+                        avatarId = existing?.avatarUri ?: "avatar_1"
+                    )
+                )
+                Result.success(localUser.copy(name = finalName))
             } else {
                 Result.failure(Exception("Please enter a valid email and password."))
             }
@@ -160,6 +197,8 @@ class AuthRepositoryImpl(
             // Even if network fails, proceed with local logout
         }
         tokenManager.clearSession()
+        userProfileDao.deleteProfile()
+        settingsRepository.updateUserProfile(UserProfile(name = "User", phoneNumber = "", gender = "Prefer not to say"))
         Result.success(Unit)
     }
 
@@ -175,12 +214,19 @@ class AuthRepositoryImpl(
             if (response.isSuccessful && response.body()?.success == true) {
                 val user = response.body()!!.user!!
                 tokenManager.updateName(user.name)
+                settingsRepository.updateUserProfile(
+                    UserProfile(
+                        name = user.name,
+                        phoneNumber = user.phoneNumber ?: "",
+                        gender = "Prefer not to say"
+                    )
+                )
                 Result.success(user)
             } else {
                 Result.failure(Exception("Session expired"))
             }
         } catch (e: Exception) {
-            // Offline-first: if network is down but token exists, return cached local session
+            // Offline-first: if network is down but token exists, return cached local profile
             val localProfile = userProfileDao.getUserProfileSync()
             if (localProfile != null) {
                 Result.success(
@@ -198,19 +244,28 @@ class AuthRepositoryImpl(
     }
 
     override suspend fun updateProfile(name: String, phoneNumber: String?): Result<UserDto> = withContext(Dispatchers.IO) {
-        // Update local Room first (Offline-first requirement)
+        // Update local Room and DataStore first
         val existing = userProfileDao.getUserProfileSync()
+        val newPhone = phoneNumber ?: existing?.phoneNumber ?: ""
         if (existing != null) {
             userProfileDao.insertOrUpdate(
                 existing.copy(
                     name = name,
-                    phoneNumber = phoneNumber ?: existing.phoneNumber,
+                    phoneNumber = newPhone,
                     isCloudSynced = false,
                     updatedAt = System.currentTimeMillis()
                 )
             )
         }
         tokenManager.updateName(name)
+        settingsRepository.updateUserProfile(
+            UserProfile(
+                name = name,
+                phoneNumber = newPhone,
+                gender = existing?.gender ?: "Prefer not to say",
+                avatarId = existing?.avatarUri ?: "avatar_1"
+            )
+        )
 
         // Then attempt cloud synchronization
         val bearer = tokenManager.getBearerToken()
@@ -235,7 +290,7 @@ class AuthRepositoryImpl(
                 userId = "usr_local",
                 name = name,
                 email = existing?.email ?: "",
-                phoneNumber = phoneNumber ?: existing?.phoneNumber
+                phoneNumber = newPhone
             )
         )
     }
@@ -254,9 +309,10 @@ class AuthRepositoryImpl(
             }
         }
 
-        // Clear local session & local profile
+        // Clear local session, profile & DataStore
         tokenManager.clearSession()
         userProfileDao.deleteProfile()
+        settingsRepository.updateUserProfile(UserProfile(name = "User", phoneNumber = "", gender = "Prefer not to say"))
         Result.success(Unit)
     }
 

@@ -114,9 +114,9 @@ class SettingsRepositoryImpl(private val context: Context) : SettingsRepository 
     override fun getUserProfile(): Flow<UserProfile> {
         return context.dataStore.data.map { preferences ->
             UserProfile(
-                name = preferences[PreferencesKeys.USER_NAME] ?: "Sanjana",
-                phoneNumber = preferences[PreferencesKeys.USER_PHONE] ?: "9440886543",
-                gender = preferences[PreferencesKeys.USER_GENDER] ?: "Female",
+                name = preferences[PreferencesKeys.USER_NAME] ?: "User",
+                phoneNumber = preferences[PreferencesKeys.USER_PHONE] ?: "",
+                gender = preferences[PreferencesKeys.USER_GENDER] ?: "Prefer not to say",
                 avatarId = preferences[PreferencesKeys.USER_AVATAR] ?: "avatar_1"
             )
         }
