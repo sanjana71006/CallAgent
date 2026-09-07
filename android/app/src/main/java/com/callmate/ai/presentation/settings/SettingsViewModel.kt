@@ -130,6 +130,12 @@ class SettingsViewModel(
         }
     }
 
+    fun updateScheduledAgent(enabled: Boolean, startMinutes: Int, endMinutes: Int) {
+        viewModelScope.launch {
+            settingsRepository.updateScheduledAgent(enabled, startMinutes, endMinutes)
+        }
+    }
+
     fun toggleSaveTranscripts(enabled: Boolean) {
         viewModelScope.launch {
             val updated = _uiState.value.settings.copy(saveTranscripts = enabled)

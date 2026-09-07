@@ -9,6 +9,7 @@ interface SettingsRepository {
     suspend fun setAssistantEnabled(enabled: Boolean)
     suspend fun setBackendUrl(url: String)
     suspend fun setPersonality(personality: String)
+    suspend fun updateScheduledAgent(enabled: Boolean, startMinutes: Int, endMinutes: Int)
 
     // User Profile
     fun getUserProfile(): Flow<UserProfile>

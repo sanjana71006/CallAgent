@@ -22,6 +22,9 @@ class SettingsRepositoryImpl(private val context: Context) : SettingsRepository 
         val GREETING = stringPreferencesKey("greeting")
         val AUTO_SCREEN_UNKNOWN = booleanPreferencesKey("auto_screen_unknown")
         val AUTO_SCREEN_SPAM = booleanPreferencesKey("auto_screen_spam")
+        val SCHEDULED_AGENT_ENABLED = booleanPreferencesKey("scheduled_agent_enabled")
+        val SCHEDULED_AGENT_START = intPreferencesKey("scheduled_agent_start")
+        val SCHEDULED_AGENT_END = intPreferencesKey("scheduled_agent_end")
         val SAVE_TRANSCRIPTS = booleanPreferencesKey("save_transcripts")
         val SAVE_SUMMARIES = booleanPreferencesKey("save_summaries")
         val BACKEND_URL = stringPreferencesKey("backend_url")
@@ -66,6 +69,9 @@ class SettingsRepositoryImpl(private val context: Context) : SettingsRepository 
                 greeting = preferences[PreferencesKeys.GREETING] ?: "Hello! I am CallMate AI, screening this call on behalf of the user. How may I assist you?",
                 autoScreenUnknown = preferences[PreferencesKeys.AUTO_SCREEN_UNKNOWN] ?: true,
                 autoScreenSpam = preferences[PreferencesKeys.AUTO_SCREEN_SPAM] ?: true,
+                scheduledAgentEnabled = preferences[PreferencesKeys.SCHEDULED_AGENT_ENABLED] ?: false,
+                scheduledAgentStartMinutes = preferences[PreferencesKeys.SCHEDULED_AGENT_START] ?: (22 * 60),
+                scheduledAgentEndMinutes = preferences[PreferencesKeys.SCHEDULED_AGENT_END] ?: (7 * 60),
                 saveTranscripts = preferences[PreferencesKeys.SAVE_TRANSCRIPTS] ?: true,
                 saveSummaries = preferences[PreferencesKeys.SAVE_SUMMARIES] ?: true,
                 backendUrl = preferences[PreferencesKeys.BACKEND_URL] ?: "http://10.0.2.2:8000",
@@ -84,6 +90,9 @@ class SettingsRepositoryImpl(private val context: Context) : SettingsRepository 
             preferences[PreferencesKeys.GREETING] = settings.greeting
             preferences[PreferencesKeys.AUTO_SCREEN_UNKNOWN] = settings.autoScreenUnknown
             preferences[PreferencesKeys.AUTO_SCREEN_SPAM] = settings.autoScreenSpam
+            preferences[PreferencesKeys.SCHEDULED_AGENT_ENABLED] = settings.scheduledAgentEnabled
+            preferences[PreferencesKeys.SCHEDULED_AGENT_START] = settings.scheduledAgentStartMinutes
+            preferences[PreferencesKeys.SCHEDULED_AGENT_END] = settings.scheduledAgentEndMinutes
             preferences[PreferencesKeys.SAVE_TRANSCRIPTS] = settings.saveTranscripts
             preferences[PreferencesKeys.SAVE_SUMMARIES] = settings.saveSummaries
             preferences[PreferencesKeys.BACKEND_URL] = settings.backendUrl
@@ -107,6 +116,14 @@ class SettingsRepositoryImpl(private val context: Context) : SettingsRepository 
     override suspend fun setPersonality(personality: String) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.PERSONALITY] = personality
+        }
+    }
+
+    override suspend fun updateScheduledAgent(enabled: Boolean, startMinutes: Int, endMinutes: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.SCHEDULED_AGENT_ENABLED] = enabled
+            preferences[PreferencesKeys.SCHEDULED_AGENT_START] = startMinutes.coerceIn(0, 1439)
+            preferences[PreferencesKeys.SCHEDULED_AGENT_END] = endMinutes.coerceIn(0, 1439)
         }
     }
 
@@ -217,6 +234,9 @@ class SettingsRepositoryImpl(private val context: Context) : SettingsRepository 
             preferences[PreferencesKeys.GREETING] = "Hello! I am CallMate AI, screening this call on behalf of the user. How may I assist you?"
             preferences[PreferencesKeys.AUTO_SCREEN_UNKNOWN] = true
             preferences[PreferencesKeys.AUTO_SCREEN_SPAM] = true
+            preferences[PreferencesKeys.SCHEDULED_AGENT_ENABLED] = false
+            preferences[PreferencesKeys.SCHEDULED_AGENT_START] = 22 * 60
+            preferences[PreferencesKeys.SCHEDULED_AGENT_END] = 7 * 60
             preferences[PreferencesKeys.SAVE_TRANSCRIPTS] = true
             preferences[PreferencesKeys.SAVE_SUMMARIES] = true
             preferences[PreferencesKeys.BACKEND_URL] = "http://10.0.2.2:8000"

@@ -32,6 +32,9 @@ import com.callmate.ai.presentation.settings.personal.PersonalDetailsScreen
 import com.callmate.ai.presentation.settings.silent.SilentModeScreen
 import com.callmate.ai.presentation.settings.voice.VoiceLanguageScreen
 import com.callmate.ai.presentation.settings.whatsapp.WhatsAppUpdatesScreen
+import com.callmate.ai.presentation.settings.AgentScheduleScreen
+import com.callmate.ai.presentation.settings.PhoneContactsScreen
+import com.callmate.ai.CallMateApp
 import com.callmate.ai.presentation.splash.SplashScreen
 
 @Composable
@@ -133,6 +136,7 @@ fun NavGraph(
         composable(Screen.IncomingCall.route) {
             IncomingCallScreen(
                 viewModel = callViewModel,
+                autoAnswer = callViewModel.shouldAgentAnswerAutomatically(),
                 onAnswerTapped = {
                     val currentCall = callViewModel.uiState.value.currentCall
                     val callId = currentCall?.id ?: "sim-001"
@@ -230,6 +234,12 @@ fun NavGraph(
                 },
                 onNavigateToHelpCenter = {
                     navController.navigate(Screen.HelpCenter.route)
+                },
+                onNavigateToAgentSchedule = {
+                    navController.navigate(Screen.AgentSchedule.route)
+                },
+                onNavigateToPhoneContacts = {
+                    navController.navigate(Screen.PhoneContacts.route)
                 }
             )
         }
@@ -323,6 +333,20 @@ fun NavGraph(
 
         composable(Screen.HelpCenter.route) {
             HelpCenterScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.AgentSchedule.route) {
+            AgentScheduleScreen(
+                viewModel = settingsViewModel,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.PhoneContacts.route) {
+            PhoneContactsScreen(
+                contactsManager = CallMateApp.instance.contactsManager,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

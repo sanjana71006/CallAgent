@@ -22,11 +22,19 @@ import com.callmate.ai.core.theme.*
 @Composable
 fun IncomingCallScreen(
     viewModel: CallViewModel,
+    autoAnswer: Boolean = false,
     onAnswerTapped: () -> Unit,
     onDeclineTapped: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val call = uiState.currentCall
+
+    LaunchedEffect(autoAnswer, call?.id) {
+        if (autoAnswer && call != null) {
+            viewModel.acceptWithAi()
+            onAnswerTapped()
+        }
+    }
 
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseScale by infiniteTransition.animateFloat(

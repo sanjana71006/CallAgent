@@ -42,6 +42,8 @@ fun SettingsScreen(
     onNavigateToWhatsAppUpdates: () -> Unit,
     onNavigateToAccountData: () -> Unit,
     onNavigateToHelpCenter: () -> Unit,
+    onNavigateToAgentSchedule: () -> Unit,
+    onNavigateToPhoneContacts: () -> Unit,
     onNavigateToLogin: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -428,6 +430,20 @@ fun SettingsScreen(
                             subtitle = "Tell CallMate what to do",
                             isNew = true,
                             onClick = onNavigateToYourInstructions
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f), modifier = Modifier.padding(horizontal = 16.dp))
+                        SettingsNavRow(
+                            icon = Icons.Outlined.Schedule,
+                            title = "Agent Schedule",
+                            subtitle = "Answer known and unknown calls in a time range",
+                            onClick = onNavigateToAgentSchedule
+                        )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f), modifier = Modifier.padding(horizontal = 16.dp))
+                        SettingsNavRow(
+                            icon = Icons.Outlined.Contacts,
+                            title = "Phone Contacts",
+                            subtitle = "View and search contacts from this phone",
+                            onClick = onNavigateToPhoneContacts
                         )
                         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f), modifier = Modifier.padding(horizontal = 16.dp))
                         SettingsNavRow(

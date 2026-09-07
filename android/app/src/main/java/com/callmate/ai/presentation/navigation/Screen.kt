@@ -31,4 +31,6 @@ sealed class Screen(val route: String) {
     object WhatsAppUpdates : Screen("whatsapp_updates")
     object AccountData : Screen("account_data")
     object HelpCenter : Screen("help_center")
+    object AgentSchedule : Screen("agent_schedule")
+    object PhoneContacts : Screen("phone_contacts")
 }

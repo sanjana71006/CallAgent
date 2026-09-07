@@ -14,6 +14,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 enum class CallState {
     INCOMING,
@@ -100,6 +101,18 @@ class CallViewModel(
             aiVoiceState = AiVoiceState.IDLE,
             transcripts = emptyList()
         )
+    }
+
+    fun shouldAgentAnswerAutomatically(): Boolean {
+        if (!activeSettings.enabled || !activeSettings.scheduledAgentEnabled) return false
+        val currentMinutes = Calendar.getInstance().let { it.get(Calendar.HOUR_OF_DAY) * 60 + it.get(Calendar.MINUTE) }
+        val start = activeSettings.scheduledAgentStartMinutes
+        val end = activeSettings.scheduledAgentEndMinutes
+        return if (start <= end) {
+            currentMinutes in start..end
+        } else {
+            currentMinutes >= start || currentMinutes <= end
+        }
     }
 
     fun acceptWithAi() {
