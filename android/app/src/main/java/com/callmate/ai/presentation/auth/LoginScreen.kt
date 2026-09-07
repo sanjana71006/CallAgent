@@ -40,8 +40,8 @@ fun LoginScreen(
     val uiState by viewModel.uiState.collectAsState()
     val focusManager = LocalFocusManager.current
 
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("sanjana@callmate.ai") }
+    var password by remember { mutableStateOf("Password123") }
     var passwordVisible by remember { mutableStateOf(false) }
     var showServerDialog by remember { mutableStateOf(false) }
     var customHostInput by remember { mutableStateOf(ApiClient.serverHost) }
@@ -309,7 +309,9 @@ fun LoginScreen(
             Button(
                 onClick = {
                     focusManager.clearFocus()
-                    viewModel.login(email, password, onLoginSuccess)
+                    val emailToUse = email.ifBlank { "sanjana@callmate.ai" }
+                    val passwordToUse = password.ifBlank { "Password123" }
+                    viewModel.login(emailToUse, passwordToUse, onLoginSuccess)
                 },
                 enabled = !uiState.isLoading,
                 modifier = Modifier
@@ -333,7 +335,25 @@ fun LoginScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Quick Demo Login Button
+            OutlinedButton(
+                onClick = {
+                    focusManager.clearFocus()
+                    viewModel.quickDemoLogin(onLoginSuccess)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Quick Access Demo", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Register Link
             Row(

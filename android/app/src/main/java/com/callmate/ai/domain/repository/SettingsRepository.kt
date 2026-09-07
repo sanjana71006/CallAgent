@@ -31,6 +31,10 @@ interface SettingsRepository {
     fun getThemeMode(): Flow<AppThemeMode>
     suspend fun updateThemeMode(themeMode: AppThemeMode)
 
+    // Agent Onboarding Permission
+    fun getAgentPermissionGranted(): Flow<Boolean>
+    suspend fun setAgentPermissionGranted(granted: Boolean)
+
     // Reset & Wipe
     suspend fun resetToDefaults()
     suspend fun clearAllData()

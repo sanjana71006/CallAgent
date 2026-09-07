@@ -58,6 +58,9 @@ class SettingsRepositoryImpl(private val context: Context) : SettingsRepository 
 
         // Theme Mode
         val THEME_MODE = stringPreferencesKey("theme_mode")
+
+        // Agent Permission Consent
+        val AGENT_PERMISSION_GRANTED = booleanPreferencesKey("agent_permission_granted")
     }
 
     override fun getSettings(): Flow<AssistantSettings> {
@@ -261,6 +264,18 @@ class SettingsRepositoryImpl(private val context: Context) : SettingsRepository 
             preferences[PreferencesKeys.WA_PROMOTIONAL_UPDATES] = false
 
             preferences[PreferencesKeys.THEME_MODE] = AppThemeMode.SYSTEM.name
+        }
+    }
+
+    override fun getAgentPermissionGranted(): Flow<Boolean> {
+        return context.dataStore.data.map { preferences ->
+            preferences[PreferencesKeys.AGENT_PERMISSION_GRANTED] ?: false
+        }
+    }
+
+    override suspend fun setAgentPermissionGranted(granted: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.AGENT_PERMISSION_GRANTED] = granted
         }
     }
 

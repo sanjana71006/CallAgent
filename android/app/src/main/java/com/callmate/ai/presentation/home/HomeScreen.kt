@@ -26,6 +26,7 @@ import com.callmate.ai.core.theme.*
 import com.callmate.ai.domain.model.Call
 import com.callmate.ai.domain.model.CallCategory
 import com.callmate.ai.domain.model.Importance
+import com.callmate.ai.presentation.common.AgentPermissionDialog
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -36,10 +37,35 @@ fun HomeScreen(
     onNavigateToIncomingCall: () -> Unit,
     onNavigateToHistory: () -> Unit,
     onNavigateToCallDetails: (String) -> Unit,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    onNavigateToPhoneContacts: () -> Unit = {},
+    onNavigateToAgentSchedule: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var selectedBottomTab by remember { mutableStateOf("chats") }
+    var showPermissionDialog by remember { mutableStateOf(false) }
+
+    // Auto-prompt permission dialog if not yet granted
+    LaunchedEffect(uiState.agentPermissionGranted) {
+        if (!uiState.agentPermissionGranted) {
+            showPermissionDialog = true
+        }
+    }
+
+    if (showPermissionDialog && !uiState.agentPermissionGranted) {
+        AgentPermissionDialog(
+            onDismiss = { showPermissionDialog = false },
+            onGrant = {
+                viewModel.grantAgentPermission()
+                showPermissionDialog = false
+            },
+            onConfigureSchedule = {
+                viewModel.grantAgentPermission()
+                showPermissionDialog = false
+                onNavigateToAgentSchedule()
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -340,6 +366,98 @@ fun HomeScreen(
                                     contentDescription = null,
                                     tint = Color.White,
                                     modifier = Modifier.size(40.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2.5 Quick Actions Grid (Call Saved Contact & AI Schedule)
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // Call Saved Contact Card
+                    Surface(
+                        onClick = onNavigateToPhoneContacts,
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(ElectricBlue.copy(alpha = 0.12f), shape = CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Contacts,
+                                    contentDescription = null,
+                                    tint = ElectricBlue,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = "Call Contacts",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "AI Outbound Call",
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    // AI Schedule Card
+                    Surface(
+                        onClick = onNavigateToAgentSchedule,
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(AccentGreen.copy(alpha = 0.12f), shape = CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Schedule,
+                                    contentDescription = null,
+                                    tint = AccentGreen,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = "AI Schedule",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Auto-Handling Hours",
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }

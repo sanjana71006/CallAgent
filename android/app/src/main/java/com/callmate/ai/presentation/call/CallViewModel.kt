@@ -103,6 +103,22 @@ class CallViewModel(
         )
     }
 
+    fun startOutboundCall(contactName: String, phoneNumber: String) {
+        val cleanName = contactName.ifBlank { "Saved Contact" }
+        val cleanNumber = phoneNumber.ifBlank { "Unknown Number" }
+        val call = callProvider.startIncomingCall(cleanName, cleanNumber)
+        _uiState.value = CallUiState(
+            currentCall = call,
+            callState = CallState.AI_SCREENING,
+            aiVoiceState = AiVoiceState.SPEAKING,
+            transcripts = emptyList()
+        )
+        startCallTimer()
+        val greetingText = "Hello $cleanName! This is ${activeSettings.assistantName}, calling with CallMate AI. How are you doing today?"
+        addTranscriptMessage(speaker = "ai", message = greetingText)
+        ttsManager.speak(greetingText, pitch = activeSettings.speechPitch, rate = activeSettings.speechRate)
+    }
+
     fun shouldAgentAnswerAutomatically(): Boolean {
         if (!activeSettings.enabled || !activeSettings.scheduledAgentEnabled) return false
         val currentMinutes = Calendar.getInstance().let { it.get(Calendar.HOUR_OF_DAY) * 60 + it.get(Calendar.MINUTE) }

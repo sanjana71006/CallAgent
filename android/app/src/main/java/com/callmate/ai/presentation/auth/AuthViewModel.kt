@@ -110,6 +110,25 @@ class AuthViewModel(
         }
     }
 
+    fun quickDemoLogin(onSuccess: () -> Unit) {
+        val demoUser = UserDto(
+            userId = "demo-user-001",
+            name = "Sanjana",
+            email = "sanjana@callmate.ai",
+            phoneNumber = "+91 98765 43210"
+        )
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                isLoggedIn = true,
+                currentUser = demoUser,
+                errorMessage = null
+            )
+        }
+        _authState.value = AuthState.Authenticated(demoUser)
+        onSuccess()
+    }
+
     fun register(
         name: String,
         email: String,

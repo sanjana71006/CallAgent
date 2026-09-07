@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 data class HomeUiState(
     val assistantEnabled: Boolean = true,
     val assistantName: String = "CallMate AI",
+    val agentPermissionGranted: Boolean = false,
     val totalCallsCount: Int = 0,
     val screenedCount: Int = 0,
     val importantCount: Int = 0,
@@ -32,6 +33,15 @@ class HomeViewModel(
     init {
         observeSettings()
         observeCalls()
+        observePermission()
+    }
+
+    private fun observePermission() {
+        viewModelScope.launch {
+            settingsRepository.getAgentPermissionGranted().collect { granted ->
+                _uiState.update { it.copy(agentPermissionGranted = granted) }
+            }
+        }
     }
 
     private fun observeSettings() {
@@ -70,6 +80,13 @@ class HomeViewModel(
     fun toggleAssistant(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setAssistantEnabled(enabled)
+        }
+    }
+
+    fun grantAgentPermission() {
+        viewModelScope.launch {
+            settingsRepository.setAgentPermissionGranted(true)
+            settingsRepository.setAssistantEnabled(true)
         }
     }
 }

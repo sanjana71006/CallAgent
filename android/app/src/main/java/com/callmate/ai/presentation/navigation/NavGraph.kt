@@ -55,15 +55,8 @@ fun NavGraph(
         composable(Screen.Splash.route) {
             SplashScreen(
                 onSplashFinished = {
-                    val isLoggedIn = authViewModel.uiState.value.isLoggedIn || authViewModel.authState.value is AuthState.Authenticated
-                    if (isLoggedIn) {
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Splash.route) { inclusive = true }
-                        }
-                    } else {
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(Screen.Splash.route) { inclusive = true }
-                        }
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
                     }
                 }
             )
@@ -129,6 +122,12 @@ fun NavGraph(
                 },
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
+                },
+                onNavigateToPhoneContacts = {
+                    navController.navigate(Screen.PhoneContacts.route)
+                },
+                onNavigateToAgentSchedule = {
+                    navController.navigate(Screen.AgentSchedule.route)
                 }
             )
         }
@@ -347,7 +346,13 @@ fun NavGraph(
         composable(Screen.PhoneContacts.route) {
             PhoneContactsScreen(
                 contactsManager = CallMateApp.instance.contactsManager,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onCallContactWithAi = { name, number ->
+                    callViewModel.startOutboundCall(name, number)
+                    val currentCall = callViewModel.uiState.value.currentCall
+                    val callId = currentCall?.id ?: "sim-outbound"
+                    navController.navigate(Screen.LiveCall.createRoute(callId))
+                }
             )
         }
     }
