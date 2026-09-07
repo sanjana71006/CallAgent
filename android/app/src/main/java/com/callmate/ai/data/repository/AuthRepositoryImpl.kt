@@ -64,6 +64,7 @@ class AuthRepositoryImpl(
                 settingsRepository.updateUserProfile(
                     UserProfile(
                         name = user.name,
+                        email = user.email,
                         phoneNumber = user.phoneNumber ?: phoneNumber ?: "",
                         gender = "Prefer not to say",
                         avatarId = "avatar_1"
@@ -96,6 +97,7 @@ class AuthRepositoryImpl(
                 settingsRepository.updateUserProfile(
                     UserProfile(
                         name = localUser.name,
+                        email = localUser.email,
                         phoneNumber = localUser.phoneNumber ?: "",
                         gender = "Prefer not to say",
                         avatarId = "avatar_1"
@@ -137,6 +139,7 @@ class AuthRepositoryImpl(
                 settingsRepository.updateUserProfile(
                     UserProfile(
                         name = user.name,
+                        email = user.email,
                         phoneNumber = user.phoneNumber?.ifBlank { null } ?: existing?.phoneNumber ?: "",
                         gender = existing?.gender ?: "Prefer not to say",
                         avatarId = existing?.avatarUri ?: "avatar_1"
@@ -176,6 +179,7 @@ class AuthRepositoryImpl(
                 settingsRepository.updateUserProfile(
                     UserProfile(
                         name = finalName,
+                        email = localUser.email,
                         phoneNumber = finalPhone,
                         gender = existing?.gender ?: "Prefer not to say",
                         avatarId = existing?.avatarUri ?: "avatar_1"
@@ -198,7 +202,7 @@ class AuthRepositoryImpl(
         }
         tokenManager.clearSession()
         userProfileDao.deleteProfile()
-        settingsRepository.updateUserProfile(UserProfile(name = "User", phoneNumber = "", gender = "Prefer not to say"))
+        settingsRepository.updateUserProfile(UserProfile(name = "User", email = "", phoneNumber = "", gender = "Prefer not to say"))
         Result.success(Unit)
     }
 
@@ -217,8 +221,10 @@ class AuthRepositoryImpl(
                 settingsRepository.updateUserProfile(
                     UserProfile(
                         name = user.name,
+                        email = user.email,
                         phoneNumber = user.phoneNumber ?: "",
-                        gender = "Prefer not to say"
+                        gender = "Prefer not to say",
+                        avatarId = "avatar_1"
                     )
                 )
                 Result.success(user)

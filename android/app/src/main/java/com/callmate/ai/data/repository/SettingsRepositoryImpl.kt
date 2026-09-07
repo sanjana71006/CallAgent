@@ -33,6 +33,7 @@ class SettingsRepositoryImpl(private val context: Context) : SettingsRepository 
 
         // User Profile
         val USER_NAME = stringPreferencesKey("user_name")
+        val USER_EMAIL = stringPreferencesKey("user_email")
         val USER_PHONE = stringPreferencesKey("user_phone")
         val USER_GENDER = stringPreferencesKey("user_gender")
         val USER_AVATAR = stringPreferencesKey("user_avatar")
@@ -132,6 +133,7 @@ class SettingsRepositoryImpl(private val context: Context) : SettingsRepository 
         return context.dataStore.data.map { preferences ->
             UserProfile(
                 name = preferences[PreferencesKeys.USER_NAME] ?: "User",
+                email = preferences[PreferencesKeys.USER_EMAIL] ?: "",
                 phoneNumber = preferences[PreferencesKeys.USER_PHONE] ?: "",
                 gender = preferences[PreferencesKeys.USER_GENDER] ?: "Prefer not to say",
                 avatarId = preferences[PreferencesKeys.USER_AVATAR] ?: "avatar_1"
@@ -142,6 +144,7 @@ class SettingsRepositoryImpl(private val context: Context) : SettingsRepository 
     override suspend fun updateUserProfile(profile: UserProfile) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.USER_NAME] = profile.name
+            preferences[PreferencesKeys.USER_EMAIL] = profile.email
             preferences[PreferencesKeys.USER_PHONE] = profile.phoneNumber
             preferences[PreferencesKeys.USER_GENDER] = profile.gender
             preferences[PreferencesKeys.USER_AVATAR] = profile.avatarId

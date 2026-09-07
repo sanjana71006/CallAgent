@@ -938,6 +938,19 @@
                     </div>
                     <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-secondary);"></i>
                 </div>
+                <div class="settings-row-divider"></div>
+                <div class="settings-row" onclick="openModal('modal-schedule')">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-regular fa-clock" style="color: var(--primary); font-size: 16px; width: 20px;"></i>
+                        <div>
+                            <div style="font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                Agent Schedule <span class="badge-new" id="schedule-active-badge" style="display: none;">ACTIVE</span>
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-secondary);" id="schedule-subtitle">Auto-handle all calls in set hours</div>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 12px; color: var(--text-secondary);"></i>
+                </div>
             </div>
 
             <!-- SECTION: ABOUT YOU -->
@@ -1306,7 +1319,51 @@
         </div>
     </div>
 
-    <!-- MODAL: EDIT PROFILE (Name, Phone, Gender in MongoDB) -->
+    <!-- MODAL: AGENT SCHEDULE (Start & End Time Auto-Handling) -->
+    <div class="modal-overlay" id="modal-schedule">
+        <div class="modal-sheet">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h3 style="font-size: 16px; font-weight: 800;"><i class="fa-regular fa-clock" style="color: var(--primary);"></i> AI Call Schedule</h3>
+                <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeModal('modal-schedule')"></i>
+            </div>
+            
+            <div id="schedule-live-status-box" style="background: var(--primary-soft); border: 1px solid var(--primary); border-radius: 12px; padding: 12px; margin-bottom: 14px;">
+                <div style="font-size: 11px; font-weight: 800; color: var(--primary); letter-spacing: 0.5px;" id="schedule-status-title">⚪ SCHEDULE INACTIVE</div>
+                <div style="font-size: 12px; color: var(--text-primary); margin-top: 2px;" id="schedule-status-desc">When active, AI handles ALL calls (known contacts & unknown callers) automatically.</div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--surface-elevated); padding: 12px; border-radius: 12px; margin-bottom: 14px; border: 1px solid var(--border);">
+                <div>
+                    <div style="font-size: 13px; font-weight: 700;">Auto-Handle All Calls</div>
+                    <div style="font-size: 11px; color: var(--text-secondary);">Screens both saved contacts & unknown numbers</div>
+                </div>
+                <input type="checkbox" id="schedule-enabled-check" style="width: 20px; height: 20px; accent-color: var(--primary); cursor: pointer;" onchange="updateScheduleStatusUI()">
+            </div>
+
+            <div style="font-size: 11px; font-weight: 800; color: var(--text-secondary); margin-bottom: 6px;">QUICK PRESETS</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;">
+                <button type="button" class="dock-tab" style="border: 1px solid var(--border); font-size: 11px; padding: 8px;" onclick="setSchedulePreset('22:00', '07:00')">🌙 Night (10PM-7AM)</button>
+                <button type="button" class="dock-tab" style="border: 1px solid var(--border); font-size: 11px; padding: 8px;" onclick="setSchedulePreset('09:00', '17:00')">💼 Work (9AM-5PM)</button>
+                <button type="button" class="dock-tab" style="border: 1px solid var(--border); font-size: 11px; padding: 8px;" onclick="setSchedulePreset('13:00', '14:00')">🍽️ Lunch (1PM-2PM)</button>
+                <button type="button" class="dock-tab" style="border: 1px solid var(--border); font-size: 11px; padding: 8px;" onclick="setSchedulePreset('00:00', '23:59')">⚡ 24/7 Always On</button>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                <div style="flex: 1;">
+                    <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Start Time (HH:mm)</div>
+                    <input type="text" id="schedule-start-input" value="22:00" placeholder="22:00" style="width: 100%; height: 38px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-size: 13px;" oninput="updateScheduleStatusUI()">
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">End Time (HH:mm)</div>
+                    <input type="text" id="schedule-end-input" value="07:00" placeholder="07:00" style="width: 100%; height: 38px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-size: 13px;" oninput="updateScheduleStatusUI()">
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="saveSchedule()">Save Schedule Settings</button>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT PROFILE (Name, Email, Phone, Gender in MongoDB) -->
     <div class="modal-overlay" id="modal-profile">
         <div class="modal-sheet">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
@@ -1314,19 +1371,23 @@
                 <i class="fa-solid fa-xmark" style="cursor: pointer; font-size: 16px;" onclick="closeModal('modal-profile')"></i>
             </div>
             <div style="margin-bottom: 10px;">
-                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Name</div>
-                <input type="text" id="edit-name-input" value="Sanjana" style="width: 100%; height: 38px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-size: 13px;">
+                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Full Name</div>
+                <input type="text" id="edit-name-input" placeholder="Your Name" style="width: 100%; height: 38px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-size: 13px;">
+            </div>
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Email Address (Account Identity)</div>
+                <input type="email" id="edit-email-input" placeholder="name@example.com" style="width: 100%; height: 38px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-size: 13px;">
             </div>
             <div style="margin-bottom: 10px;">
                 <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Phone Number</div>
-                <input type="text" id="edit-phone-input" value="9440886543" style="width: 100%; height: 38px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-size: 13px;">
+                <input type="text" id="edit-phone-input" placeholder="+1 (555) 000-0000" style="width: 100%; height: 38px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-size: 13px;">
             </div>
             <div style="margin-bottom: 16px;">
                 <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">Gender</div>
                 <select id="edit-gender-select" style="width: 100%; height: 38px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); padding: 0 10px; font-size: 13px;">
-                    <option value="Female" selected>Female</option>
+                    <option value="Female">Female</option>
                     <option value="Male">Male</option>
-                    <option value="Prefer not to say">Prefer not to say</option>
+                    <option value="Prefer not to say" selected>Prefer not to say</option>
                 </select>
             </div>
             <button class="btn-primary" onclick="saveProfile()">Save Changes to MongoDB</button>
@@ -2304,6 +2365,99 @@
         container.innerHTML = html;
     }
 
+    let agentSchedule = {
+        enabled: false,
+        startMinutes: 22 * 60,
+        endMinutes: 7 * 60
+    };
+
+    function isWithinSchedule() {
+        if (!agentSchedule.enabled) return false;
+        const now = new Date();
+        const curMinutes = now.getHours() * 60 + now.getMinutes();
+        const start = agentSchedule.startMinutes;
+        const end = agentSchedule.endMinutes;
+        if (start <= end) return curMinutes >= start && curMinutes <= end;
+        return curMinutes >= start || curMinutes <= end;
+    }
+
+    function setSchedulePreset(start, end) {
+        document.getElementById('schedule-start-input').value = start;
+        document.getElementById('schedule-end-input').value = end;
+        updateScheduleStatusUI();
+    }
+
+    function updateScheduleStatusUI() {
+        const enabled = document.getElementById('schedule-enabled-check').checked;
+        const startVal = document.getElementById('schedule-start-input').value;
+        const endVal = document.getElementById('schedule-end-input').value;
+        
+        const titleEl = document.getElementById('schedule-status-title');
+        const descEl = document.getElementById('schedule-status-desc');
+        const badgeEl = document.getElementById('schedule-active-badge');
+        const subtitleEl = document.getElementById('schedule-subtitle');
+
+        if (!enabled) {
+            titleEl.innerText = "⚪ SCHEDULE INACTIVE";
+            titleEl.style.color = "var(--text-secondary)";
+            descEl.innerText = "Enable this feature to have AI automatically answer all calls during focus/sleep hours.";
+            if (badgeEl) badgeEl.style.display = 'none';
+            if (subtitleEl) subtitleEl.innerText = "Auto-handle all calls in set hours";
+            return;
+        }
+
+        const now = new Date();
+        const curMinutes = now.getHours() * 60 + now.getMinutes();
+        const sMin = parseTimeMinutes(startVal) || (22 * 60);
+        const eMin = parseTimeMinutes(endVal) || (7 * 60);
+        const activeNow = (sMin <= eMin) ? (curMinutes >= sMin && curMinutes <= eMin) : (curMinutes >= sMin || curMinutes <= eMin);
+
+        if (activeNow) {
+            titleEl.innerText = "🟢 ACTIVE RIGHT NOW";
+            titleEl.style.color = "var(--primary)";
+            descEl.innerText = "AI is currently answering ALL calls (known contacts & unknown numbers) automatically on your behalf.";
+            if (badgeEl) badgeEl.style.display = 'inline-block';
+            if (subtitleEl) subtitleEl.innerText = `Active now (${startVal} - ${endVal})`;
+        } else {
+            titleEl.innerText = `⏰ SCHEDULED (${startVal} - ${endVal})`;
+            titleEl.style.color = "var(--primary)";
+            descEl.innerText = `AI will automatically handle all calls starting at ${startVal} until ${endVal}.`;
+            if (badgeEl) badgeEl.style.display = 'none';
+            if (subtitleEl) subtitleEl.innerText = `Scheduled (${startVal} - ${endVal})`;
+        }
+    }
+
+    function parseTimeMinutes(str) {
+        if (!str || !str.includes(':')) return null;
+        const parts = str.split(':');
+        const h = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        if (isNaN(h) || isNaN(m)) return null;
+        return h * 60 + m;
+    }
+
+    function saveSchedule() {
+        const enabled = document.getElementById('schedule-enabled-check').checked;
+        const startVal = document.getElementById('schedule-start-input').value;
+        const endVal = document.getElementById('schedule-end-input').value;
+        
+        const sMin = parseTimeMinutes(startVal);
+        const eMin = parseTimeMinutes(endVal);
+        if (sMin === null || eMin === null) {
+            showToast("Please enter valid times like 22:00 and 07:00");
+            return;
+        }
+
+        agentSchedule.enabled = enabled;
+        agentSchedule.startMinutes = sMin;
+        agentSchedule.endMinutes = eMin;
+
+        localStorage.setItem('callmate_schedule', JSON.stringify(agentSchedule));
+        updateScheduleStatusUI();
+        showToast("Schedule updated: " + (enabled ? `Active ${startVal}-${endVal}` : "Disabled"));
+        closeModal('modal-schedule');
+    }
+
     function openQuickSimulation() {
         startCallSimulation();
     }
@@ -2331,6 +2485,14 @@
         } catch (e) {}
 
         showScreen('screen-incoming');
+
+        // Check if scheduled AI auto-handling is currently active
+        if (isWithinSchedule()) {
+            showToast("⏰ AI Schedule Active: Intercepting call automatically on your behalf...");
+            setTimeout(() => {
+                answerCallWithAi();
+            }, 1200);
+        }
     }
 
     function answerCallWithAi() {
@@ -2338,7 +2500,9 @@
         const feed = document.getElementById('transcript-feed');
         feed.innerHTML = '';
         
-        const greeting = "Hello! I am CallMate AI, screening this call on behalf of Sanjana. How may I assist you today?";
+        const storedUser = JSON.parse(localStorage.getItem('callmate_user') || '{}');
+        const userName = storedUser.name || document.getElementById('user-display-name')?.innerText || 'User';
+        const greeting = `Hello! I am CallMate AI, screening this call on behalf of ${userName}. How may I assist you today?`;
         addTranscript('ai', greeting);
         speakText(greeting);
     }
