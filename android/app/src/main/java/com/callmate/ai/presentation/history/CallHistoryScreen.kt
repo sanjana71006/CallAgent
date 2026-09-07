@@ -63,6 +63,7 @@ fun CallHistoryScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .imePadding()
         ) {
             // Search Bar
             OutlinedTextField(

@@ -51,6 +51,7 @@ fun PhoneContactsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()
                 .padding(horizontal = 16.dp)
         ) {
             OutlinedTextField(
